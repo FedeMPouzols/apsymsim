@@ -1,0 +1,1 @@
+e:\PYTHON\python.exe e:\PyInstaller-2.1\pyinstaller.py --icon z:\APSYNSIM-0.3\COMPILE\APSYNSIM_icon_small.ico --hidden-import=scipy.special._ufuncs_cxx  z:\APSYNSIM-0.3\SCRIPT\APSYNSIM-v0.3.py

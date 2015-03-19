@@ -1,0 +1,76 @@
+
+APSYNSIM, A REAL-TIME APERTURE SYNTHESIS SIMULATOR
+IVAN MARTI-VIDAL (ONSALA SPACE OBSERVATORY, NORDIC ARC NODE)
+
+
+
+
+INSTRUCTIONS:
+
+If you work on Windows, run the binary file called APSYNSIM-v0.3.exe, 
+which is located in the WIN32_BINARY directory.
+
+If you work on Linux or Mac, open a terminal, go to the the directory 
+called SCRIPT, and run the command "python APSYNSIM-v0.3.py".
+
+##########
+NOTE FOR MAC USERS: The Python Tk module may not work properly on some 
+versions of MacOS. If that happens, the user can try to run "ipython" instead
+of "python". If Ipython still does not work, the user may want to install an 
+alternative version of the Tk module. Another solution to this problem is to 
+use an alternative Python version. Please, contact us if you need help with 
+this.
+##########
+
+
+You will find some examples of interferometer arrays and source models 
+in the ARRAYS and SOURCE_MODELS directories, respectively, together with 
+instructions on how you can build your own interferometers and source 
+models (read, for instance, the content of the "default.array" and 
+"default.model" files).
+
+You can click and drag the antennas in the plot called "ARRAY CONFIGURATION".
+When you drag an antenna, all other plots (UV PLANE, DIRTY BEAM, and DIRTY 
+IMAGE) will be updated automatically (may need some time to refresh, 
+especially if working on Windows and/or with many antennas).
+
+You can also click on any point of the DIRTY BEAM, MODEL IMAGE, or DIRTY 
+IMAGE plots, and the program will tell you the intensity value and the pixel 
+coordinates.
+
+If you click on the UV PLANE image, the program will print the value of the 
+source Fourier transform at that point. If you click close to a point observed
+with the interferometer, the program will tell you the baseline and hour
+angle of observation.
+
+You can also change the observing latitude, hour-angle coverage, source 
+declination, and observing wavelength by clicking on the blue sliders at 
+the bottom-right corner of the figure. The plots will be updated 
+automatically (may also need some time to refresh all plots).
+
+The dirty beam is computed using Briggs weighting. The robustness parameter
+can be changed by shifting the corresponding blue slider (robustness of -2 
+tends to uniform weighting, whereas +2 tends to natural weighting).
+
+You can add and/or subtract antennas by pressing the "+ Antenna" and 
+"- Antenna" buttons. New antennas are inserted at the array origin (0,0). 
+If you add, drag, and subtract an antenna, the program will remember the 
+last antenna positions if you add them again.
+
+You can save the current array, load a new array (for instance, from the 
+EXAMPLES folder), and/or load a new source model (for instance, from 
+the EXAMPLES folder) by pressing the corresponding buttons "Save array", 
+"Load array" and "Load model".
+
+Of course, you can also use all the buttons from the Matplotlib backend 
+(bottom-right corner of the program window) to pan&zoom in any plot.
+
+ 
+Enjoy!
+
+
+
+
+P.S: Any bug report, comment or suggestion should be addressed to:
+
+contact@nordic-alma.se

@@ -1,0 +1,26 @@
+
+v0.3 - December 2014.
+----------------------
+
+- Added new arrays and source examples.
+- Capability of reading images as source components.
+- Overplot of source FT on top of UV coverage.
+- Reversal of the sign of U in the UVplot (for selfconsistency).
+- Added labels to antennas and printout of baseline info on click event.
+
+
+v0.2.1 - September 2014.
+-------------------------
+
+-Minor bug corrections.
+-Added printout of image intensity on click events.
+
+
+v0.2 - August 2014.
+--------------------
+
+-Added array and source examples. 
+-Added "robustness" slider. 
+
+
+v0.1 - July 2014. First version
