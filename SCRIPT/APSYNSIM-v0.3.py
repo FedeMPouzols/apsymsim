@@ -26,6 +26,7 @@ import pylab as pl
 import numpy as np
 import scipy.ndimage.interpolation as spndint
 from matplotlib.widgets import Slider, Button
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.cm as cm
 import matplotlib.image as plimg
 import tkFileDialog
@@ -98,6 +99,26 @@ class Interferometer(object):
     self.beamPlot = self.figUV.add_subplot(233,aspect='equal')
     self.modelPlot = self.figUV.add_subplot(235,aspect='equal')
     self.dirtyPlot = self.figUV.add_subplot(236,aspect='equal')
+
+    self.spherePlot = pl.axes([0.53,0.82,0.12,0.12],projection='3d',aspect='equal')
+
+    u = np.linspace(0, 2 * np.pi, 100)
+    v = np.linspace(0, np.pi, 100)
+    x = 10 * np.outer(np.cos(u), np.sin(v))
+    y = 10 * np.outer(np.sin(u), np.sin(v))
+    z = 10 * np.outer(np.ones(np.size(u)), np.cos(v))
+    self.spherePlotPlot = self.spherePlot.plot_surface(x, y, z,  rstride=4, cstride=4, color=(0.8,0.8,1.0))
+    self.spherePlot._axis3don = False
+    self.spherePlot.patch.set_alpha(0.8)
+    beta = np.zeros(100)
+    self.arrayPath = [np.zeros(self.nH), np.zeros(self.nH), np.zeros(self.nH)]
+    self.sphereArray = self.spherePlot.plot([],[],[],'y',linewidth=3)
+    self.spherePlot.set_xlim3d((-6,6))
+    self.spherePlot.set_ylim3d((-6,6))
+    self.spherePlot.set_zlim3d((-6,6))
+    self.spherePlot.patch.set_alpha(0.8)
+    self.spherePlot.elev = 45.
+
 
     self.figUV.subplots_adjust(left=0.05,right=0.99,top=0.95,bottom=0.07,hspace=0.25)
     self.figUV.canvas.mpl_connect('pick_event', self._onPick)
@@ -740,8 +761,7 @@ class Interferometer(object):
     self.UVPlot.set_xlabel(self.ulab)
     self.UVPlot.set_ylabel(self.vlab) 
 
-
-
+    
 
   def _plotBeam(self,redo=True):
 
@@ -769,6 +789,12 @@ class Interferometer(object):
       warn = 'WARNING!\nToo short baselines for such a small image\nPLEASE, INCREASE THE IMAGE SIZE!\nAND/OR DECREASE THE WAVELENGTH'
       self.beamText.set_text(warn)
 
+    self.spherePlot.view_init(elev=self.dec/self.deg2rad,azim=0)
+    self.arrayPath[0][:] = 10.*self.H[1]*np.cos(self.lat)
+    self.arrayPath[1][:] = 10.*self.H[0]*np.cos(self.lat)
+    self.arrayPath[2][:] = 10.*np.sin(self.lat)
+    self.sphereArray[0].set_data(self.arrayPath[0], self.arrayPath[1])
+    self.sphereArray[0].set_3d_properties(self.arrayPath[2])
 
 
 
