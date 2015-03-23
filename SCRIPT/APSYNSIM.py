@@ -34,27 +34,55 @@ from tkMessageBox import showinfo
 import os
 import time
 
-__version__ = '0.3'
+__version__ = '0.3.1'
 
 class Interferometer(object):
 
   def __init__(self,antenna_file="",model_file=""):
+
+    self.__version__ = __version__
 
     self.Hfac = np.pi/180.*15.
     self.deg2rad = np.pi/180.
 
     self.robust = 0.0
     self.deltaAng = 1.*self.deg2rad
-    self.deltaH = 0.25*self.Hfac
-    self.nH = 200
     self.gamma = 0.5  # Gamma correction to plot model.
-    self.Npix = 512   # Image pixel size. Must be a power of 2
     self.lfac = 1.e6   # Lambda units (i.e., 1.e6 => Mlambda)
     self.ulab = r'U (M$\lambda$)'
     self.vlab = r'V (M$\lambda$)'
 
+
+# Default of defaults!
+    nH = 200
+    Npix = 512   # Image pixel size. Must be a power of 2
+    DefaultMod = 'Nebula.model'
+    DefaultArray = 'Golay_12.array'
+
+# Overwrite defaults from config file:
     d1 = os.path.dirname(os.path.realpath(__file__))
     print d1
+
+#   execfile(os.path.join(os.path.basename(d1),'APSYNSIM.config'))
+    conf = open(os.path.join(d1,'APSYNSIM.config'))
+    for line in conf.readlines():
+      temp=line.replace(' ','')
+      if len(temp)>2:
+         if temp[0:4] == 'Npix':
+           Npix = int(temp[5:temp.find('#')])
+         if temp[0:2] == 'nH':
+           nH = int(temp[3:temp.find('#')])
+         if temp[0:10] == 'DefaultMod':
+           DefaultModel = temp[12:temp.find('#')].replace('\'','').replace('\"','')
+         if temp[0:12] == 'DefaultArray':
+           DefaultArray = temp[14:temp.find('#')].replace('\'','').replace('\"','')
+
+    conf.close()
+
+# Set instance configuration values:
+    self.nH = nH
+    self.Npix = Npix
+
     self.datadir = os.path.join(d1,'..','PICTURES')
     self.arraydir  = os.path.join(d1,'..','ARRAYS')
     self.modeldir  = os.path.join(d1,'..','SOURCE_MODELS')
@@ -62,19 +90,20 @@ class Interferometer(object):
  # Try to read a default initial array:
     if len(antenna_file)==0:
       try:
-        antenna_file = os.path.join(self.arraydir,'Golay_12.array')
+        antenna_file = os.path.join(self.arraydir,DefaultArray)
       except:
         pass
 
  # Try to read a default initial model:
     if len(model_file)==0:
       try:
-        model_file = os.path.join(self.modeldir,'Nebula.model')
+        model_file = os.path.join(self.modeldir,DefaultModel)
       except:
         pass
 
 
     self.lock=False
+    self._onSphere = False
 
     self.readAntennas(str(antenna_file))
     self.readModels(str(model_file))
@@ -124,6 +153,8 @@ class Interferometer(object):
     self.figUV.canvas.mpl_connect('pick_event', self._onPick)
     self.figUV.canvas.mpl_connect('motion_notify_event', self._onAntennaDrag)
     self.figUV.canvas.mpl_connect('button_release_event',self._onRelease)
+    self.figUV.canvas.mpl_connect('button_press_event',self._onPress)
+
     self.pickAnt = False
 
     self.fmtH = r'$\phi = $ %3.1f$^\circ$   $\delta = $ %3.1f$^\circ$' "\n" r'H = %3.1fh / %3.1fh'
@@ -650,7 +681,7 @@ class Interferometer(object):
        pl.setp(self.UVPlotFFTPlot, extent=(-self.UVmax/2.,self.UVmax/2.,-self.UVmax/2.,self.UVmax/2.))
     else:
        self.UVPlotFFTPlot.set_data(toplot)
-       pl.setp(self.UVPlotFFTPlot, extent=(-self.UVmax/2.,self.UVmax/2.,-self.UVmax/2.,self.UVmax/2.))
+    #   pl.setp(self.UVPlotFFTPlot, extent=(-self.UVmax/2.,self.UVmax/2.,-self.UVmax/2.,self.UVmax/2.))
        self.UVPlotFFTPlot.norm.vmin = mval-dval
        self.UVPlotFFTPlot.norm.vmax = Mval+dval
 
@@ -677,7 +708,7 @@ class Interferometer(object):
       self.dirtyPlotPlot.set_data(self.dirtymap[Np4:self.Npix-Np4,Np4:self.Npix-Np4])
       self.dirtyPlotPlot.norm.vmin = extr[0]
       self.dirtyPlotPlot.norm.vmax = extr[1]
-      pl.setp(self.dirtyPlotPlot, extent=(self.Xaxmax/2.,-self.Xaxmax/2.,-self.Xaxmax/2.,self.Xaxmax/2.))
+  #    pl.setp(self.dirtyPlotPlot, extent=(self.Xaxmax/2.,-self.Xaxmax/2.,-self.Xaxmax/2.,self.Xaxmax/2.))
 
 
 
@@ -778,7 +809,7 @@ class Interferometer(object):
     else:
       self.beamPlotPlot.set_data(self.beam[Np4:self.Npix-Np4,Np4:self.Npix-Np4])
       self.beamText.set_text(self.fmtB%(1.0,0.0,0.0))
-      pl.setp(self.beamPlotPlot, extent=(self.Xaxmax/2.,-self.Xaxmax/2.,-self.Xaxmax/2.,self.Xaxmax/2.))
+   #   pl.setp(self.beamPlotPlot, extent=(self.Xaxmax/2.,-self.Xaxmax/2.,-self.Xaxmax/2.,self.Xaxmax/2.))
 
 
     self.nptot = np.sum(self.totsamplingU[:])
@@ -881,7 +912,37 @@ class Interferometer(object):
        pl.draw()
 
 
+# Drag the sphere plot (to change source position)
+     if self._onSphere:
+       oldDec = self.dec/self.deg2rad
+       newDec, newH0 = self.spherePlot.elev, self.spherePlot.azim
+
+   # Limits on declination:
+       if np.abs(newDec)>90.:
+         self.spherePlot.view_init(elev = oldDec, azim=0.0)
+         return
+
+       newDec *= self.deg2rad
+       if not self.lock:
+         self.lock=True
+         if newDec != self.dec and np.abs(newDec-self.lat)<np.pi/2.:
+           self.widget['dec'].set_val(newDec/self.deg2rad)
+           self.spherePlot.view_init(elev = newDec/self.deg2rad, azim=0.0)
+           self.dec = newDec
+           self._changeCoordinates()
+           self.lock = False
+         else:
+           self.spherePlot.view_init(elev = oldDec, azim=0.0)
+           self.lock = False
+       else:
+           self.spherePlot.view_init(elev = oldDec, azim=0.0)
+
+
+
+
+
   def _onRelease(self,event):
+     self._onSphere = False
      if self.pickAnt:
        self.pickAnt = False
        self.antText.set_text(self.fmtA%self.Nant)
@@ -990,6 +1051,10 @@ class Interferometer(object):
     self._changeCoordinates()
 
 
+  def _onPress(self,event):
+    if event.inaxes == self.spherePlot:
+      self._onSphere = True
+
 
   def saveArray(self,array):
 
@@ -1068,95 +1133,4 @@ class Interferometer(object):
 
 if __name__ == "__main__":
   myint = Interferometer()
-
-# Just some test code. 
-# Do your tests here (and set it to True! :D):
-  if False:
-   fig = pl.figure(figsize=(6,6))
-   if False:
-    sub = fig.add_subplot(111)
-    fig.subplots_adjust(bottom=0.01,left=0.01,right=0.99,top=0.95)
-    pl1 = pl.imshow(myint.beam[256-15:256+16,256-15:256+16],interpolation='nearest')
-    pl.setp(sub.get_xticklabels(),visible=False)
-    pl.setp(sub.get_yticklabels(),visible=False)
-    pl.title('BEAM (NATURAL)')
-    pl.savefig('beam-natural.plot.png')
-    pl.clf()
-   if False:
-    sub = fig.add_subplot(111)
-    fig.subplots_adjust(bottom=0.01,left=0.01,right=0.99,top=0.95)
-    pl1 = pl.imshow(myint.dirtymap)
-    pl.setp(sub.get_xticklabels(),visible=False)
-    pl.setp(sub.get_yticklabels(),visible=False)
-    pl.title('DIRTY IMAGE')
-    pl.savefig('dirtymap.plot.png')
-    pl.clf()
-   if False:
-    sub = fig.add_subplot(111)
-    fig.subplots_adjust(bottom=0.01,left=0.01,right=0.99,top=0.95)
-    pl1 = pl.imshow(myint.modelim)
-    pl.setp(sub.get_xticklabels(),visible=False)
-    pl.setp(sub.get_yticklabels(),visible=False)
-    pl.title('TRUE IMAGE')
-    pl.savefig('model.plot.png')
-    pl.clf()
-   toplot = np.power(np.fft.ifftshift(np.abs(myint.modelfft)),0.25)
-   if False:
-    sub = fig.add_subplot(111)
-    fig.subplots_adjust(bottom=0.01,left=0.01,right=0.99,top=0.95)
-    pl1 = pl.imshow(toplot)
-    pl.setp(sub.get_xticklabels(),visible=False)
-    pl.setp(sub.get_yticklabels(),visible=False)
-    pl.title('UV PLANE')
-    pl.savefig('uvplane.plot.png')
-    pl.clf()
-   if True:
-    import matplotlib.cm as cm
-    sub = fig.add_subplot(111)
-    fig.subplots_adjust(bottom=0.01,left=0.01,right=0.99,top=0.95)
-    pl1 = pl.imshow(myint.totsampling>0.0,cmap = cm.Greys_r,
-                    interpolation='nearest')
-    pl.setp(sub.get_xticklabels(),visible=False)
-    pl.setp(sub.get_yticklabels(),visible=False)
-    pl.title('UV SAMPLING')
-    pl.savefig('uvsampling.plot.png')
-    pl1 = pl.imshow(toplot*(myint.totsampling>0.0),interpolation='nearest',vmax=np.max(toplot),vmin=np.min(toplot))
-    pl.setp(sub.get_xticklabels(),visible=False)
-    pl.setp(sub.get_yticklabels(),visible=False)
-    pl.title('UV DATA')
-    pl.savefig('uvdata.plot.png')
-
-    pl.clf()
-    sub = fig.add_subplot(111)
-    fig.subplots_adjust(bottom=0.01,left=0.01,right=0.99,top=0.95)
-    toplot = np.fft.fftshift(np.fft.ifft2((np.fft.ifftshift(myint.totsampling>0.01).astype(np.float32))).real)
-    pl1 = pl.imshow(toplot[256-60:256+60,256-60:256+60],interpolation='nearest')
-    pl.setp(sub.get_xticklabels(),visible=False)
-    pl.setp(sub.get_yticklabels(),visible=False)
-    pl.title('BEAM (UNIFORM)')
-    pl.savefig('beam-uniform.plot.png')
-    pl.clf()
-
-   if False:
-    sub = fig.add_subplot(111)
-    fig.subplots_adjust(bottom=0.01,left=0.01,right=0.99,top=0.95)
-    toinvert = np.logical_not(myint.totsampling>0.01)
-    pm = 0.2
-    dist = np.linspace(-128,128,256); odist = np.ones(256)
-    dd = np.exp(-(np.outer(dist,odist)**2.+np.outer(odist,dist)**2.)/(2.*pm**2.))
-    toinvert[:]*=dd
-
-    toplot = np.abs(np.fft.fftshift(np.fft.fft2((np.fft.fftshift(toinvert).astype(np.float32)))))
-    toplot += np.min(toplot)
-    toplot=np.power(toplot,0.45)
-    pl1 = pl.imshow(toplot,vmax=np.max(toplot),vmin=-np.max(toplot),interpolation='nearest')
-
-    pl.setp(sub.get_xticklabels(),visible=False)
-    pl.setp(sub.get_yticklabels(),visible=False)
-    pl.title('PECULIAR SOURCE')
-    pl.savefig('invisible.png')
-
-    pl1.set_data(np.zeros((256,256)))
-    pl.title('PECULIAR DIRTY IMAGE')
-    pl.savefig('zeros.png')
 
