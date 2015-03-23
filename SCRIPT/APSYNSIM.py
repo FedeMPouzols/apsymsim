@@ -1120,7 +1120,7 @@ class Interferometer(object):
         self._changeCoordinates()
         self._plotModelFFT(redo=False) 
         self.wax['wave'].cla()
-        self.widget['wave'] = Slider(self.wax['wave'],r'$\lambda$ (mm)',self.wavelength*1.e6/3.,3.*self.wavelength*1.e6,valinit=self.wavelength*1.e6)
+        self.widget['wave'] = Slider(self.wax['wave'],r'$\lambda$ (mm)',self.wavelength*1.e6/10.,10.*self.wavelength*1.e6,valinit=self.wavelength*1.e6)
         self.widget['wave'].on_changed(self._changeWavelength)
         pl.draw()
 
