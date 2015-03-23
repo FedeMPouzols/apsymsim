@@ -1,1 +1,6 @@
-e:\PYTHON\python.exe e:\PyInstaller-2.1\pyinstaller.py --icon z:\APSYNSIM-0.3\COMPILE\APSYNSIM_icon_small.ico --hidden-import=scipy.special._ufuncs_cxx  z:\APSYNSIM-0.3\SCRIPT\APSYNSIM-v0.3.py
+# LINE TO USE WITH PYINSTALLER, TO COMPILE A BINARY FOR WINDOWS. 
+
+# DON'T FORGET TO CREATE A "__init__.py" EMPTY FILE IN THE 
+# "mpl_toolkits" DIRECTORY OF YOUR PYTHON INSTALLATION!
+
+e:\PYTHON\python.exe e:\PyInstaller-2.1\pyinstaller.py -y  z:\APSYNSIM\SCRIPT\APSYNSIM.spec

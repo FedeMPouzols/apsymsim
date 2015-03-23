@@ -7,11 +7,11 @@ IVAN MARTI-VIDAL (ONSALA SPACE OBSERVATORY, NORDIC ARC NODE)
 
 INSTRUCTIONS:
 
-If you work on Windows, run the binary file called APSYNSIM-v0.3.exe, 
-which is located in the WIN32_BINARY directory.
+If you work on Windows, run the binary file called APSYNSIM.exe, 
+which is located in the APSYNSIM directory.
 
 If you work on Linux or Mac, open a terminal, go to the the directory 
-called SCRIPT, and run the command "python APSYNSIM-v0.3.py".
+called SCRIPT, and run the command "python APSYNSIM.py".
 
 ##########
 NOTE FOR MAC USERS: The Python Tk module may not work properly on some 
