@@ -171,7 +171,8 @@ class Interferometer(object):
     self.fmtBas = r'Bas %i $-$ %i  at  H = %4.2fh'
     self.fmtVis = r'Amp: %.1e Jy.   Phase: %5.1f deg.' 
     self.fmtA = 'N = %i'
-    self.fmtA2 = '  Picked Ant. #%i'
+    self.fmtA2 = '  Picked Ant. #%i' 
+    self.fmtA3 = '\n%6.1fm | %6.1fm'
     fmtB1 = r'$\lambda = $ %4.1fmm  '%(self.wavelength*1.e6)
     self.fmtB = fmtB1 + "\n" + r'% 4.2f Jy/beam' + "\n" + r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f '
     self.fmtD = r'% .2e Jy/beam' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f '
@@ -762,7 +763,7 @@ class Interferometer(object):
     self.antPlot.set_xlabel('E-W offset (km)')
     self.antPlot.set_ylabel('N-S offset (km)')
     self.antPlot.set_title('ARRAY CONFIGURATION')
-    self.antText = self.antPlot.text(0.05,0.92,self.fmtA%self.Nant,transform=self.antPlot.transAxes)
+    self.antText = self.antPlot.text(0.05,0.88,self.fmtA%self.Nant,transform=self.antPlot.transAxes)
     self.UVPlotPlot = []
     toplotu = self.u.flatten()/self.lfac ;  toplotv = self.v.flatten()/self.lfac ; 
     self.UVPlotPlot.append(self.UVPlot.plot(toplotu, toplotv,'.b',markersize=1,picker=2)[0])
@@ -929,7 +930,7 @@ class Interferometer(object):
      if len(self.antidx) > 1:
        self.antidx = self.antidx[-1]
      self.pickAnt = True
-     self.antText.set_text(self.fmtA%self.Nant + self.fmtA2%self.antidx)
+     self.antText.set_text(self.fmtA%self.Nant + self.fmtA2%self.antidx + self.fmtA3%tuple([1000*a for a in self.antPos[self.antidx]]))
      pl.draw()
 
 
@@ -938,6 +939,7 @@ class Interferometer(object):
   def _onAntennaDrag(self,event):   
      if self.pickAnt:
        self.antPos[self.antidx] = [event.xdata,event.ydata]
+       self.antText.set_text(self.fmtA%self.Nant + self.fmtA2%self.antidx + self.fmtA3%tuple([1000*a for a in self.antPos[self.antidx]]))
        self._setBaselines(antidx=self.antidx)
        self._plotAntennas(redo=False)
        self._setBeam(antidx=self.antidx)
@@ -1140,11 +1142,11 @@ class Interferometer(object):
            xL = self.Xaxmax/2.
           if yL > self.Xaxmax/2.:
            yL = self.Xaxmax/2.
-         if cz == 2:
-          if xL > 4.*self.Xmax/self.lfac/scal:
-           xL = 4.*self.Xmax/self.lfac/scal
-          if yL > 4.*self.Xmax/self.lfac/scal:
-           yL = 4.*self.Xmax/self.lfac/scal
+     #    if cz == 2:
+     #     if xL > 4.*self.Xmax/self.lfac/scal:
+     #      xL = 4.*self.Xmax/self.lfac/scal
+     #     if yL > 4.*self.Xmax/self.lfac/scal:
+     #      yL = 4.*self.Xmax/self.lfac/scal
 
          x0 = RA-xL
          x1 = RA+xL
@@ -1225,7 +1227,7 @@ class Interferometer(object):
         self.widget['H0'].set_val(self.Hcov[0]/self.Hfac)
         self.widget['H1'].set_val(self.Hcov[1]/self.Hfac)
         self.widget['wave'].set_val(self.wavelength*1.e6)
-        self._plotAntennas(redo=True,rescale=True)
+        self._plotAntennas(redo=False,rescale=True)
       #  self._setBaselines()
         self._plotBeam(redo=True)
         self._plotDirty(redo=True)
