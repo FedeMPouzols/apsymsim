@@ -62,9 +62,7 @@ EXAMPLES folder), and/or load a new source model (for instance, from
 the EXAMPLES folder) by pressing the corresponding buttons "Save array", 
 "Load array" and "Load model".
 
-Of course, you can also use all the buttons from the Matplotlib backend 
-(bottom-right corner of the program window) to pan&zoom in any plot.
-
+Double clicking with the left (right) buttons zooms in (out) in any of the figures.
  
 Enjoy!
 
