@@ -56,6 +56,7 @@ class Interferometer(object):
     self.ulab = r'U (M$\lambda$)'
     self.vlab = r'V (M$\lambda$)'
 
+    self.currcmap = cm.jet
 
 # Default of defaults!
     nH = 200
@@ -68,7 +69,12 @@ class Interferometer(object):
     print d1
 
 #   execfile(os.path.join(os.path.basename(d1),'APSYNSIM.config'))
-    conf = open(os.path.join(d1,'APSYNSIM.config'))
+    try:
+      conf = open(os.path.join(d1,'APSYNSIM.config'))
+    except:
+      d1 = os.getcwd()
+      conf = open(os.path.join(d1,'APSYNSIM.config'))
+      
     for line in conf.readlines():
       temp=line.replace(' ','')
       if len(temp)>2:
@@ -165,7 +171,7 @@ class Interferometer(object):
     self.figUV.canvas.mpl_connect('motion_notify_event', self._onAntennaDrag)
     self.figUV.canvas.mpl_connect('button_release_event',self._onRelease)
     self.figUV.canvas.mpl_connect('button_press_event',self._onPress)
-
+    self.figUV.canvas.mpl_connect('key_press_event', self._onKeyPress)
     self.pickAnt = False
 
     self.fmtH = r'$\phi = $ %3.1f$^\circ$   $\delta = $ %3.1f$^\circ$' "\n" r'H = %3.1fh / %3.1fh'
@@ -663,7 +669,7 @@ class Interferometer(object):
 
     if redo:
       self.modelPlot.cla()
-      self.modelPlotPlot = self.modelPlot.imshow(np.power(self.modelim[Np4:self.Npix-Np4,Np4:self.Npix-Np4],self.gamma),picker=True,interpolation='nearest',vmin=0.0,vmax=np.max(self.modelim)**self.gamma,cmap=cm.jet)
+      self.modelPlotPlot = self.modelPlot.imshow(np.power(self.modelim[Np4:self.Npix-Np4,Np4:self.Npix-Np4],self.gamma),picker=True,interpolation='nearest',vmin=0.0,vmax=np.max(self.modelim)**self.gamma,cmap=self.currcmap)
  #     self.modelPlotPlot = self.modelPlot.imshow(self.modelim[Np4:self.Npix-Np4,Np4:self.Npix-Np4],picker=True,interpolation='nearest') #,vmin=0.0,vmax=np.max(self.modelim))
 
       modflux = self.modelim[self.Nphf,self.Nphf]
@@ -718,7 +724,7 @@ class Interferometer(object):
    # Nphf = int(self.Npix/2)
     if redo:
       self.dirtyPlot.cla()
-      self.dirtyPlotPlot = self.dirtyPlot.imshow(self.dirtymap[Np4:self.Npix-Np4,Np4:self.Npix-Np4],interpolation='nearest',picker=True, cmap=cm.jet)
+      self.dirtyPlotPlot = self.dirtyPlot.imshow(self.dirtymap[Np4:self.Npix-Np4,Np4:self.Npix-Np4],interpolation='nearest',picker=True, cmap=self.currcmap)
       modflux = self.dirtymap[self.Nphf,self.Nphf]
       self.dirtyText = self.dirtyPlot.text(0.05,0.87,self.fmtD%(modflux,0.0,0.0),
          transform=self.dirtyPlot.transAxes,bbox=dict(facecolor='white', 
@@ -828,7 +834,7 @@ class Interferometer(object):
     Np4 = self.Npix/4
     if redo:
       self.beamPlot.cla()
-      self.beamPlotPlot = self.beamPlot.imshow(self.beam[Np4:self.Npix-Np4,Np4:self.Npix-Np4],picker=True,interpolation='nearest', cmap=cm.jet)
+      self.beamPlotPlot = self.beamPlot.imshow(self.beam[Np4:self.Npix-Np4,Np4:self.Npix-Np4],picker=True,interpolation='nearest', cmap=self.currcmap)
       self.beamText = self.beamPlot.text(0.05,0.80,self.fmtB%(1.0,0.0,0.0),
            transform=self.beamPlot.transAxes,bbox=dict(facecolor='white', alpha=0.7))
       self.beamPlot.set_ylabel('Dec offset (as)')
@@ -1086,6 +1092,34 @@ class Interferometer(object):
     self.antText.set_text(newtext)
     self._prepareBaselines()
     self._changeCoordinates()
+
+
+  def _onKeyPress(self,event):
+
+    if event.key == 'c' or event.key == 'C':
+
+      if self.currcmap == cm.jet:
+         self.currcmap = cm.Greys_r
+      else:
+         self.currcmap = cm.jet
+
+
+      self._plotBeam(redo=True)
+      self._plotModel(redo=True)
+      self._plotDirty(redo=True)
+      self._plotModelFFT(redo=True)
+
+      pl.draw()
+
+    if event.key == 'Z':
+      event.button = 1
+      event.dblclick = True
+      self._onPress(event)
+    if event.key == 'z':
+      event.button = 3
+      event.dblclick = True
+      self._onPress(event)
+
 
 
   def _onPress(self,event):

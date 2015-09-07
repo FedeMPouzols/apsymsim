@@ -63,6 +63,9 @@ the EXAMPLES folder) by pressing the corresponding buttons "Save array",
 "Load array" and "Load model".
 
 Double clicking with the left (right) buttons zooms in (out) in any of the figures.
+
+You can also zoom in/out by pressing "Z" or "z" (respectively). The program will
+then zoom using the current cursor position as zooming center.
  
 Enjoy!
 
