@@ -1,3 +1,10 @@
+v 0.3.2 - June 2016.
+
+- Removed matplotlib toolbar (showed buggy behavior).
+- Added zooming functions (by double clicking).
+- Corrected bugs.
+- New models and array configurations.
+
 v 0.3.1 - March 2015.
 ----------------------
 

@@ -24,6 +24,7 @@ import Tkinter
 import FileDialog
 import pylab as pl
 import matplotlib as mpl
+mpl.use('TkAgg')
 import numpy as np
 import scipy.ndimage.interpolation as spndint
 from matplotlib.widgets import Slider, Button
