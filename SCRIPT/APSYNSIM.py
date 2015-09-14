@@ -19,7 +19,6 @@
 #
 #############################################################################
 
-
 import Tkinter
 import FileDialog
 import pylab as pl
@@ -45,7 +44,8 @@ class Interferometer(object):
   def __init__(self,antenna_file="",model_file=""):
 
     self.__version__ = __version__
-
+    self.tks = Tkinter.Tk()
+    self.tks.withdraw()
     self.Hfac = np.pi/180.*15.
     self.deg2rad = np.pi/180.
     self.curzoom = [0,0,0,0]
