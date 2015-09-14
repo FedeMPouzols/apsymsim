@@ -1,4 +1,9 @@
-v 0.3.2 - June 2016.
+v 0.3.3 - September 2015.
+
+- Changed zooming function (pressing Z or z for in/out).
+- Use of Tk backend by default.
+
+v 0.3.2 - June 2015.
 
 - Removed matplotlib toolbar (showed buggy behavior).
 - Added zooming functions (by double clicking).
