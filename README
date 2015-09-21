@@ -4,24 +4,31 @@ IVAN MARTI-VIDAL (ONSALA SPACE OBSERVATORY, NORDIC ARC NODE)
 
 
 
-
-INSTRUCTIONS:
+#####################
+# RUNNING APSYNSIM: #
+#####################
 
 If you work on Windows, run the binary file called APSYNSIM.exe, 
 which is located in the APSYNSIM directory.
 
-If you work on Linux or Mac, open a terminal, go to the the directory 
-called SCRIPT, and run the command "python APSYNSIM.py".
+If you work on Mac, try to run the script (located in either the SCRIPT
+or the SOURCE directory) with the command:
+
+pythonw APSYNSIM.py
+
+(notice the "w" at the end of the "python").
+
+If the GUI does not respond well, then run the binary "APSYNSIM.app" 
+(located in the APSYNSIM directory) *from*the*command*line*.
+
+If you work on Linux, open a terminal, go to the the directory 
+called SCRIPT (or SOURCE), and run the command "python APSYNSIM.py".
+
+
 
 ##########
-NOTE FOR MAC USERS: The Python Tk module may not work properly on some 
-versions of MacOS. If that happens, the user can try to run "ipython" instead
-of "python". If Ipython still does not work, the user may want to install an 
-alternative version of the Tk module. Another solution to this problem is to 
-use an alternative Python version. Please, contact us if you need help with 
-this.
+# USAGE: #
 ##########
-
 
 You will find some examples of interferometer arrays and source models 
 in the ARRAYS and SOURCE_MODELS directories, respectively, together with 

@@ -21,10 +21,10 @@
 
 import Tkinter
 import FileDialog
-import pylab as pl
 import matplotlib as mpl
 mpl.use('TkAgg')
 import numpy as np
+import pylab as pl
 import scipy.ndimage.interpolation as spndint
 from matplotlib.widgets import Slider, Button
 from mpl_toolkits.mplot3d import Axes3D
@@ -36,10 +36,16 @@ import tkFileDialog
 from tkMessageBox import showinfo
 import os
 import time
+import sys
 
-__version__ = '0.3.3'
+__version__ = '0.3.3-r1'
 
 class Interferometer(object):
+
+  def quit(self,event):
+  
+    self.tks.destroy()
+    sys.exit()
 
   def __init__(self,antenna_file="",model_file=""):
 
@@ -197,6 +203,7 @@ class Interferometer(object):
     self.wax['rem'] = pl.axes([0.20,0.11,0.12,0.07])
     self.wax['save'] =  pl.axes([0.07,0.05,0.08,0.05]) 
     self.wax['loadarr']=pl.axes([0.155,0.05,0.08,0.05])
+    self.wax['quit']=pl.axes([0.155,0.01,0.08,0.03])
     self.wax['loadmod']=pl.axes([0.24,0.05,0.08,0.05])
     self.wax['gammacorr']=pl.axes([0.46,0.08,0.13,0.02],axisbg='white')
    # self.wax['gammacorr'].yaxis.label.set_color('white')
@@ -213,6 +220,7 @@ class Interferometer(object):
     self.widget['save'] = Button(self.wax['save'],'Save array')
     self.widget['loadarr'] = Button(self.wax['loadarr'],'Load array')
     self.widget['loadmod'] = Button(self.wax['loadmod'],'Load model')
+    self.widget['quit'] = Button(self.wax['quit'],'Quit')
     self.widget['gammacorr'] = Slider(self.wax['gammacorr'],'gamma',0.1,1.0,valinit=self.gamma,color='red')
     self.widget['gammacorr'].label.set_color('white')
     self.widget['gammacorr'].valtext.set_color('white')
@@ -229,6 +237,7 @@ class Interferometer(object):
     self.widget['loadarr'].on_clicked(self.loadArray)
     self.widget['loadmod'].on_clicked(self.loadModel)
     self.widget['gammacorr'].on_changed(self._gammacorr)
+    self.widget['quit'].on_clicked(self.quit)
 
 
     self._prepareBeam()
@@ -1125,6 +1134,10 @@ class Interferometer(object):
   def _onPress(self,event):
     if event.inaxes == self.spherePlot:
       self._onSphere = True
+
+
+    if not hasattr(event,'dblclick'):
+       event.dblclick = False
 
     if event.dblclick:
 # ZOOM IN:
