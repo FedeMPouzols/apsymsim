@@ -69,11 +69,12 @@ EXAMPLES folder), and/or load a new source model (for instance, from
 the EXAMPLES folder) by pressing the corresponding buttons "Save array", 
 "Load array" and "Load model".
 
-Double clicking with the left (right) buttons zooms in (out) in any of the figures.
-
-You can also zoom in/out by pressing "Z" or "z" (respectively). The program will
+You can zoom in/out by pressing "Z" or "z" (respectively). The program will
 then zoom using the current cursor position as zooming center.
  
+The new "Reduce data" button opens a CLEAN GUI, where you can also corrupt
+your visibilities, to see the effect on the DIRTY and CLEAN images.
+
 Enjoy!
 
 
