@@ -1727,9 +1727,14 @@ class CLEANer(object):
 
     try:
       an1 = int(self.entries['Ant1'].curselection()[0])
-      an2 = int(self.entries['Ant2'].curselection()[0])
     except:
       return
+
+    try:
+      an2 = int(self.entries['Ant2'].curselection()[0])
+    except:
+      an2=an1
+
 
     if an2==an1:
       an2=-1
