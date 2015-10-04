@@ -1,3 +1,12 @@
+v 0.4b1 - OCTOBER 2015.
+
+- New integration into Tkinter.
+
+- New CLEAN graphical interface
+
+- New feature for corrupting antenna gains.
+
+
 v 0.3.3-r1 - September 2015.
 
 - Added "quit" button.

@@ -135,7 +135,7 @@ CLEAN components are shown in the CLEAN image).
 HOW TO ADD A CORRUPTING GAIN
 -----------------------------
 
-Just select an antenna from the "Ant. 1" list to corrup it. If you select
+Just select an antenna from the "Ant. 1" list to corrupt it. If you select
 a different antenna from the "Ant. 2" list, only the baseline between 
 the two antennas will be corrupted. But if the two antennas are the same,
 then ALL the baselines to that antenna will be corrupted.
@@ -155,7 +155,8 @@ perfectly calibrated again).
 
 NOTICE THAT if a new antenna is added, or subtracted, the gains are 
 reset automatically (but you will need to refresh the images in this 
-window, by pressing the "RESET" button, just below the "CLEAN" button. 
+window, by pressing the "RESET" button, just below the "CLEAN" 
+button, to load the correct images). 
 
 """
 
