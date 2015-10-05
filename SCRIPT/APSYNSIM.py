@@ -172,11 +172,7 @@ class Interferometer(object):
 
     self.__version__ = __version__
 
-  #  if tkroot is None:
-   #   self.tks = None  #Tkinter.Tk()
-  #  else:
     self.tks = tkroot
-   # self.tks.withdraw()
 
     self.Hfac = np.pi/180.*15.
     self.deg2rad = np.pi/180.
@@ -262,11 +258,9 @@ class Interferometer(object):
     win.title("Help")
     helptext = ScrolledText(win)
     helptext.config(state=Tk.NORMAL)
-   # about = __help_text__
     helptext.insert('1.0',__help_text__)
     helptext.config(state=Tk.DISABLED)
 
-   # Tk.Label(win, text=about, width=100, height=10).pack()
     helptext.pack()
     Tk.Button(win, text='OK', command=win.destroy).pack()
 
@@ -289,16 +283,11 @@ class Interferometer(object):
       menubar.add_command(label="Quit", command=self.quit)
 
       self.tks.config(menu=menubar)
-    #  menubar.pack(side=Tk.TOP)
       self.canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
 
 
 
 
-#    self.figUV.canvas.toolbar = CustomToolbar(self.figUV.canvas, self.figUV)
-#    self.figUV.canvas.toolbar.update()
-
-  #  self.figUV.canvas.set_window_title('Aperture Synthesis Simulator (I. Marti-Vidal, Onsala Space Observatory) - version  %s'%__version__)
     self.antPlot = self.figUV.add_subplot(231,aspect='equal')
     self.UVPlot = self.figUV.add_subplot(232,aspect='equal',axisbg=(0.4,0.4,0.4))
     self.beamPlot = self.figUV.add_subplot(233,aspect='equal')
@@ -360,8 +349,6 @@ class Interferometer(object):
     self.wax['quit']=pl.axes([0.155,0.02,0.08,0.05])
     self.wax['loadmod']=pl.axes([0.24,0.08,0.08,0.05])
     self.wax['gammacorr']=pl.axes([0.46,0.08,0.13,0.02],axisbg='white')
-   # self.wax['gammacorr'].yaxis.label.set_color('white')
-   # self.wax['gammacorr'].label.set_color('white')
 
     self.widget['robust'] = Slider(self.wax['robust'],r'Robust',-2.,2.,valinit=0.0)
     self.widget['lat'] = Slider(self.wax['lat'],r'Lat (deg)',-90.,90.,valinit=self.lat/self.deg2rad)
@@ -396,9 +383,6 @@ class Interferometer(object):
     self.widget['reduce'].on_clicked(self.reduce)
 
 
-   # if makefigs:
-   #   self._makefigs()
- # def _makefigs(self):
 
     self._prepareBeam()
     self._prepareBaselines()
@@ -412,14 +396,8 @@ class Interferometer(object):
     self._plotModelFFT()
 
 
-#    def new_home(self, *args, **kwargs):
-#       print 'home pressed'
-#    pl.get_current_fig_manager().toolbar.home = new_home #.bind('<Button-1>', new_home)
 
-
- #   pl.show()
     self.canvas.draw()
- #   Tk.mainloop()
 
 
 
@@ -664,10 +642,8 @@ class Interferometer(object):
   def _setGains(self,An1,An2,H0,H1,G):
 
     self.Gains[:] = 1.0
- #   print 'FROM: ',An1,An2,H0,H1,G,np.sum(self.Gains)
 
     for nb in range(self.Nbas):
-  #    print self.antnum[nb],An1,An2
       if An1 == self.antnum[nb][0]:
         if An2 == -1 or An2 == self.antnum[nb][1]:
           self.Gains[nb,H0:H1] *= G
@@ -677,16 +653,10 @@ class Interferometer(object):
 
 
     self._setBaselines()
-  #  self._plotAntennas(redo=False)
     self._setBeam()
     self._plotBeam(redo=False)
     self._plotDirty(redo=False)
-   #    pl.draw()
     self.canvas.draw()
-
-   # self.myCLEAN._reset()
-
- #   print 'TO: ',np.sum(self.Gains)
 
 
 
@@ -695,7 +665,6 @@ class Interferometer(object):
     self.beam = np.zeros((self.Npix,self.Npix),dtype=np.float32)
     self.totsampling = np.zeros((self.Npix,self.Npix),dtype=np.float32)
     self.dirtymap = np.zeros((self.Npix,self.Npix),dtype=np.float32)
-#    self.totsamplingU = np.zeros((self.Npix,self.Npix),dtype=np.float32)
     self.robustsamp = np.zeros((self.Npix,self.Npix),dtype=np.float32)
     self.Gsampling = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
     self.Grobustsamp = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
@@ -707,7 +676,6 @@ class Interferometer(object):
     NBmax = self.Nbas
     self.B = np.zeros((NBmax,self.nH),dtype=np.float32)
     self.basnum = np.zeros((self.Nant,self.Nant-1),dtype=np.int8)
-  #  self.refant = np.zeros((self.Nant,self.Nant-1),dtype=np.int8)
     self.basidx = np.zeros((self.Nant,self.Nant),dtype=np.int8)
     self.antnum = np.zeros((NBmax,2),dtype=np.int8)
 
@@ -725,8 +693,6 @@ class Interferometer(object):
         self.basnum[n2,nii[n2]] = bi
         self.basidx[n1,n2] = bi
         self.antnum[bi] = [n1,n2]
-   #     self.refant[n1,nii[n1]] = 0
-   #     self.refant[n2,nii[n2]] = 1
         nii[n1] += 1; nii[n2] += 1
         bi += 1
 
@@ -734,7 +700,6 @@ class Interferometer(object):
     self.v = np.zeros((NBmax,self.nH))
     self.ravelDims = (NBmax,self.nH)
 
-#    self.sampling = np.zeros((self.Nant,self.Npix,self.Npix),dtype=np.float32)
 
 
 
@@ -758,21 +723,17 @@ class Interferometer(object):
 
   def _gridUV(self,antidx=-1):
 
- #  antidx=-1
 
    if antidx==-1:
      bas2change = range(self.Nbas)
- #    dummy = np.zeros(self.Npix*self.Npix,dtype=np.int8)
      self.pixpos = [[] for nb in bas2change]
      self.totsampling[:] = 0.0
      self.Gsampling[:] = 0.0
    else:
      bas2change = map(int,list(self.basnum[antidx].flatten()))
 
-  # Nphf = int(self.Npix/2)
    self.UVpixsize = 2./(self.imsize*np.pi/180./3600.)
 
-  # print bas2change
 
    for nb in bas2change:
      pixU = np.rint(self.u[nb]/self.UVpixsize).flatten().astype(np.int32)
@@ -783,25 +744,12 @@ class Interferometer(object):
      mU = -pixU[goodpix] + self.Nphf
      mV = -pixV[goodpix] + self.Nphf
      if not antidx==-1:
-     # for pi in range(len(self.pixU[nb])):
-     #  self.totsampling[self.pixV[nb][pi]+self.Nphf,-self.pixU[nb][pi]+self.Nphf] -= 1.0
-     #  self.totsampling[-self.pixV[nb][pi]+self.Nphf,self.pixU[nb][pi]+self.Nphf] -= 1.0
-     #  self.Gsampling[self.pixV[nb][pi]+self.Nphf,-self.pixU[nb][pi]+self.Nphf] -= self.Gains[nb,pi]
-     #  self.Gsampling[-self.pixV[nb][pi]+self.Nphf,self.pixU[nb][pi]+self.Nphf] -= np.conjugate(self.Gains[nb,pi])
-   #    tempG = float(self.Gsampling[pV[2],mU[2]])
+
        self.totsampling[self.pixpos[nb][1],self.pixpos[nb][2]] -= 1.0
        self.totsampling[self.pixpos[nb][3],self.pixpos[nb][0]] -= 1.0
        self.Gsampling[self.pixpos[nb][1],self.pixpos[nb][2]] -= self.Gains[nb,goodpix]
        self.Gsampling[self.pixpos[nb][3],self.pixpos[nb][0]] -= np.conjugate(self.Gains[nb,goodpix])
-   #    print tempG, self.totsampling[pV[2],mU[2]]
 
-    # self.pixU[nb] = np.copy(pixU[goodpix])
-    # self.pixV[nb] = np.copy(pixV[goodpix])
- #    for pi in range(len(self.pixU[nb])):
- #      self.totsampling[self.pixV[nb][pi]+self.Nphf,-self.pixU[nb][pi]+self.Nphf] += 1.0
- #      self.totsampling[-self.pixV[nb][pi]+self.Nphf,self.pixU[nb][pi]+self.Nphf] += 1.0
- #      self.Gsampling[self.pixV[nb][pi]+self.Nphf,-self.pixU[nb][pi]+self.Nphf] += self.Gains[nb,pi]
- #      self.Gsampling[-self.pixV[nb][pi]+self.Nphf,self.pixU[nb][pi]+self.Nphf] += np.conjugate(self.Gains[nb,pi])
      self.pixpos[nb] = [np.copy(pU),np.copy(pV),np.copy(mU),np.copy(mV)]
 
      self.totsampling[pV,mU] += 1.0
@@ -810,32 +758,21 @@ class Interferometer(object):
      self.Gsampling[mV,pU] += np.conjugate(self.Gains[nb,goodpix])
 
 
-
-  # self.totsamplingU[:] = 0.0
-  # self.GsamplingU[:] = 0.0
-  # isdata = self.totsampling>0.0
-  # self.totsamplingU[isdata] = 1.0
-  # self.GsamplingU[isdata] /= self.totsampling[isdata]
-
    self.robfac = (5.*10.**(-self.robust))**2.*(2.*self.Nbas*self.nH)/np.sum(self.totsampling**2.)
 
 
   def _setBeam(self,antidx=-1):
 
-  # print 'A:',self.robfac
    self._gridUV(antidx=antidx) 
-  # print 'B:',self.robfac
 
    self.robustsamp[:] = self.totsampling/(1.+self.robfac*self.totsampling)
    self.Grobustsamp[:] = self.Gsampling/(1.+self.robfac*self.totsampling)
 
 
    self.beam[:] = np.fft.ifftshift(np.fft.ifft2(np.fft.fftshift(self.robustsamp))).real 
-  # Nphf = int(self.Npix/2)
    self.beamScale = np.max(self.beam[self.Nphf:self.Nphf+1,self.Nphf:self.Nphf+1])
    self.beam[:] /= self.beamScale
 
-  # print 'C:',np.std(self.beam)
 
 
   def _prepareModel(self):
@@ -845,7 +782,6 @@ class Interferometer(object):
     yy = np.ones(self.Npix,dtype=np.float32)
     distmat = np.zeros((self.Npix,self.Npix),dtype=np.float32)
     self.modelim = np.zeros((self.Npix,self.Npix),dtype=np.float32)
-   # Nphf = int(self.Npix/2)
     for model in self.models:
       xsh = -model[1]
       ysh = -model[2]
@@ -864,12 +800,10 @@ class Interferometer(object):
         if np.abs(xpix+self.Nphf)<self.Npix and np.abs(ypix+self.Nphf)<self.Npix:
           yint = ypix+self.Nphf
           xint = xpix+self.Nphf
-       #   print ypix+Nphf, xpix+Nphf
           self.modelim[yint,xint] += float(model[3])
 
     for imfile in self.imfiles:
       if not os.path.exists(imfile[0]):
-       # showinfo('File missing!','File %s does NOT exist. \nWill try to look in the %s directory'%(imfile[0],self.datadir)) 
         imfile[0] = os.path.join(self.datadir,imfile[0])
         if not os.path.exists(imfile[0]):
           self.showError('File %s does NOT exist. Cannot read the model!'%imfile[0]) 
@@ -892,14 +826,10 @@ class Interferometer(object):
         zdims = np.shape(zoomimg)
         zd0 = min(zdims[0],self.Nphf)
         zd1 = min(zdims[1],self.Nphf)
-    #    print zd0, zd1, zdims, dims
         sh0 = (self.Nphf-zdims[0])/2
         sh1 = (self.Nphf-zdims[1])/2
         self.modelim[sh0+Np4:sh0+Np4+zd0, sh1+Np4:sh1+Np4+zd1] += zoomimg[:zd0,:zd1]
 
-    #  figg = pl.figure()
-    #  pl.imshow(self.modelim[Np4:self.Npix-Np4,Np4:self.Npix-Np4])
-    #  pl.show()
 
     self.modelim[self.modelim<0.0] = 0.0
     self.modelfft = np.fft.fft2(np.fft.fftshift(self.modelim))
@@ -912,7 +842,6 @@ class Interferometer(object):
     if redo:
       self.modelPlot.cla()
       self.modelPlotPlot = self.modelPlot.imshow(np.power(self.modelim[Np4:self.Npix-Np4,Np4:self.Npix-Np4],self.gamma),picker=True,interpolation='nearest',vmin=0.0,vmax=np.max(self.modelim)**self.gamma,cmap=self.currcmap)
- #     self.modelPlotPlot = self.modelPlot.imshow(self.modelim[Np4:self.Npix-Np4,Np4:self.Npix-Np4],picker=True,interpolation='nearest') #,vmin=0.0,vmax=np.max(self.modelim))
 
       modflux = self.modelim[self.Nphf,self.Nphf]
       self.modelText = self.modelPlot.text(0.05,0.87,self.fmtM%(modflux,0.0,0.0),
@@ -925,7 +854,6 @@ class Interferometer(object):
       self._plotAntennas(redo=False)
     else:
       self.modelPlotPlot.set_data(np.power(self.modelim[Np4:self.Npix-Np4,Np4:self.Npix-Np4],self.gamma))
-  #    self.modelPlotPlot.set_data(self.modelim[Np4:self.Npix-Np4,Np4:self.Npix-Np4])
       extr = [0.0,np.max(self.modelim)**self.gamma]
       self.modelPlotPlot.norm.vmin = extr[0]
       self.modelPlotPlot.norm.vmax = extr[1]
@@ -942,16 +870,13 @@ class Interferometer(object):
     mval = np.min(toplot)
     Mval = np.max(toplot)
     dval = (Mval-mval)/2.
- #   print 'MVALS: ',mval,Mval
 
     if redo:
        mymap = pl.gray()
        self.UVPlotFFTPlot = self.UVPlot.imshow(toplot,cmap=mymap,vmin=mval-dval,vmax=Mval+dval,picker=5)
-  #     pl.setp(self.UVPlotFFTPlot, extent=(-self.UVmax/2.,self.UVmax/2.,-self.UVmax/2.,self.UVmax/2.))
        pl.setp(self.UVPlotFFTPlot, extent=(-self.UVmax+self.UVSh,self.UVmax+self.UVSh,-self.UVmax-self.UVSh,self.UVmax-self.UVSh))
     else:
        self.UVPlotFFTPlot.set_data(toplot)
-    #   pl.setp(self.UVPlotFFTPlot, extent=(-self.UVmax/2.,self.UVmax/2.,-self.UVmax/2.,self.UVmax/2.))
        self.UVPlotFFTPlot.norm.vmin = mval-dval
        self.UVPlotFFTPlot.norm.vmax = Mval+dval
 
@@ -963,7 +888,6 @@ class Interferometer(object):
 
     self.dirtymap[:] = (np.fft.fftshift(np.fft.ifft2(self.modelfft*np.fft.ifftshift(self.Grobustsamp)))/self.beamScale).real
     extr = [np.min(self.dirtymap),np.max(self.dirtymap)]
-   # Nphf = int(self.Npix/2)
     if redo:
       self.dirtyPlot.cla()
       self.dirtyPlotPlot = self.dirtyPlot.imshow(self.dirtymap[Np4:self.Npix-Np4,Np4:self.Npix-Np4],interpolation='nearest',picker=True, cmap=self.currcmap)
@@ -980,7 +904,6 @@ class Interferometer(object):
       self.dirtyPlotPlot.set_data(self.dirtymap[Np4:self.Npix-Np4,Np4:self.Npix-Np4])
       self.dirtyPlotPlot.norm.vmin = extr[0]
       self.dirtyPlotPlot.norm.vmax = extr[1]
-  #    pl.setp(self.dirtyPlotPlot, extent=(self.Xaxmax/2.,-self.Xaxmax/2.,-self.Xaxmax/2.,self.Xaxmax/2.))
 
 
 
@@ -1089,7 +1012,6 @@ class Interferometer(object):
     else:
       self.beamPlotPlot.set_data(self.beam[Np4:self.Npix-Np4,Np4:self.Npix-Np4])
       self.beamText.set_text(self.fmtB%(1.0,0.0,0.0))
-   #   pl.setp(self.beamPlotPlot, extent=(self.Xaxmax/2.,-self.Xaxmax/2.,-self.Xaxmax/2.,self.Xaxmax/2.))
 
 
     self.nptot = np.sum(self.totsampling[:])
@@ -1129,19 +1051,14 @@ class Interferometer(object):
      else:
        Up = event.mouseevent.xdata-self.UVSh
        Vp = event.mouseevent.ydata+self.UVSh
-#       yi = np.floor((self.UVmax/2.+Up)/(self.UVmax)*self.Npix)
-#       xi = np.floor((self.UVmax/2.-Vp)/(self.UVmax)*self.Npix)
        yi = np.floor((self.UVmax+Up)/(self.UVmax)*self.Npix/2.)
        xi = np.floor((self.UVmax-Vp)/(self.UVmax)*self.Npix/2.)
-     #  print Up, Vp, yi, xi
        Flux = self.FFTtoplot[xi,yi]
        Phas, Amp = np.angle(Flux,deg=True), np.abs(Flux)
        newtext = self.fmtVis%(Amp,Phas)
        self.visText.set_text(newtext)
        pl.draw()
        self.canvas.draw()
-   #    print Up,Vp
-#       self.auxVar = event
 
    elif event.mouseevent.inaxes == self.beamPlot:
 
@@ -1436,11 +1353,6 @@ class Interferometer(object):
            xL = self.Xaxmax/2.
           if yL > self.Xaxmax/2.:
            yL = self.Xaxmax/2.
-     #    if cz == 2:
-     #     if xL > 4.*self.Xmax/self.lfac/scal:
-     #      xL = 4.*self.Xmax/self.lfac/scal
-     #     if yL > 4.*self.Xmax/self.lfac/scal:
-     #      yL = 4.*self.Xmax/self.lfac/scal
 
          x0 = RA-xL
          x1 = RA+xL
@@ -1598,9 +1510,6 @@ class CLEANer(object):
 
     self.figCL1 = pl.figure(figsize=(5,5))    
     self.figCL2 = pl.figure(figsize=(5,5))    
-
-  #  self.ResidPlot = self.figCL.add_subplot(231,aspect='equal')
-  #  self.CLEANPlot = self.figCL.add_subplot(233,aspect='equal')
 
     self.ResidPlot = self.figCL1.add_subplot(111) #pl.axes([0.01,0.43,0.5,0.5],aspect='equal')
     self.CLEANPlot = self.figCL2.add_subplot(111,sharex=self.ResidPlot,sharey=self.ResidPlot) #pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
@@ -1769,7 +1678,6 @@ class CLEANer(object):
   #   print RA, Dec
      yi = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.parent.Npix)
      xi = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.parent.Npix)
-  #   print xi, yi
      Flux = self.residuals[xi,yi]
      self.ResidText.set_text(self.parent.fmtM%(Flux,RA,Dec))
      if self.resadd:
@@ -1788,15 +1696,11 @@ class CLEANer(object):
 
     if event.inaxes == self.ResidPlot:
       self.pressed = int(event.button)
- #   print 'WAS PRESSED:',self.pressed, event.xdata, event.ydata
- #   self.xy0 = [int(event.xdata),int(event.ydata)]
       RA = event.xdata
       Dec = event.ydata
       self.xydata = [RA,Dec]
       self.xy0[1] = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.parent.Npix)
       self.xy0[0] = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.parent.Npix)
-    #  self.Box.set_size=[0.,0.]
-    #  self.Box.set_xy(self.xy0)
       self.moved = False 
 
   def _onRelease(self,event):
@@ -1827,7 +1731,6 @@ class CLEANer(object):
 
       self.MaskPlot = self.ResidPlot.contour(np.linspace(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Npix/2),np.linspace(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Npix/2),self.mask[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4],levels=[0.5])
 
-#      self.MaskPlot.set_array(self.mask[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4])
       self.ResidPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
       self.ResidPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
 
@@ -1887,18 +1790,10 @@ class CLEANer(object):
     self._reset()
 
 
+
   def _reset(self):
 
-
-   # self.parent.Gains[:] = 1.0
-
-  #  self.parent._prepareBaselines()
-  #  self.parent._changeCoordinates()
-
-
-   # self.dirtymap[:] = np.fft.fftshift(np.fft.ifft2(self.modelfft*np.fft.ifftshift(self.robustsamp))).real/self.beamScale
     extr = [np.min(self.parent.dirtymap),np.max(self.parent.dirtymap)]
-   # Nphf = int(self.Npix/2)
 
     self.ResidPlot.cla()
 
@@ -1908,7 +1803,6 @@ class CLEANer(object):
          transform=self.ResidPlot.transAxes,bbox=dict(facecolor='white', alpha=0.7))
     pl.setp(self.ResidPlotPlot, extent=(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
 
- #   self.curzoom[1] = (self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.)
     self.Xaxmax = float(self.parent.Xaxmax)
 
     self.Box = self.ResidPlot.plot([0.,0.,0.,0.,0.],[0.,0.,0.,0.,0.],lw=2,color='w')[0]
@@ -1940,7 +1834,7 @@ class CLEANer(object):
     self.totiter = 0
 
     # DERIVE THE CLEAN BEAM
-    MainLobe = np.where(self.parent.beam>0.5)
+    MainLobe = np.where(self.parent.beam>0.75)
     dX = MainLobe[0]-self.parent.Npix/2 ; dY = MainLobe[1]-self.parent.Npix/2
     fit = spfit.leastsq(lambda x: np.exp(-(dX*dX*x[0]+dY*dY*x[1]+dX*dY*x[2]))-self.parent.beam[MainLobe],[0.,0.,0.])
     print 'BEAM FIT: ',fit[0]
@@ -1948,7 +1842,6 @@ class CLEANer(object):
     ddX = np.outer(np.ones(self.parent.Npix),np.arange(-self.parent.Npix/2,self.parent.Npix/2).astype(np.float64))
     ddY = np.outer(np.arange(-self.parent.Npix/2,self.parent.Npix/2).astype(np.float64),np.ones(self.parent.Npix))
 
-   # self.cleanBeam[:] = np.exp(-(ddX*ddX*fit[0][0]+ddY*ddY*fit[0][1]+ddY*ddX*fit[0][2]))
     self.cleanBeam[:] = np.exp(-(ddY*ddY*fit[0][0]+ddX*ddX*fit[0][1]+ddY*ddX*fit[0][2]))
 
     self.resadd = False
@@ -2006,11 +1899,9 @@ class CLEANer(object):
     win.title("Help")
     helptext = ScrolledText(win)
     helptext.config(state=Tk.NORMAL)
-   # about = __help_text__
     helptext.insert('1.0',__CLEAN_help_text__)
     helptext.config(state=Tk.DISABLED)
 
-   # Tk.Label(win, text=about, width=100, height=10).pack()
     helptext.pack()
     Tk.Button(win, text='OK', command=win.destroy).pack()
 
@@ -2027,11 +1918,6 @@ class CLEANer(object):
     self.FFTwin.title("UV space")
 
     self.figUV1 = pl.figure(figsize=(15,5))    
-  #  self.figUV2 = pl.figure(figsize=(5,5))    
-  #  self.figUV3 = pl.figure(figsize=(5,5))    
-
-  #  self.ResidPlot = self.figCL.add_subplot(231,aspect='equal')
-  #  self.CLEANPlot = self.figCL.add_subplot(233,aspect='equal')
 
     self.UVPSF = self.figUV1.add_subplot(131,aspect='equal') #pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
     self.UVResid = self.figUV1.add_subplot(132,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal') #pl.axes([0.01,0.43,0.5,0.5],aspect='equal')
@@ -2060,13 +1946,8 @@ class CLEANer(object):
     self.frames['BFr'] = Tk.Frame(self.FFTwin)
 
     self.canvasUV1 = FigureCanvasTkAgg(self.figUV1, master=self.frames['FigUV'])
-#    self.canvasUV2 = FigureCanvasTkAgg(self.figUV2, master=self.frames['FigUV'])
-#    self.canvasUV3 = FigureCanvasTkAgg(self.figUV3, master=self.frames['FigUV'])
 
     self.canvasUV1.show()
-#    self.canvasUV2.show()
-#    self.canvasUV3.show()
-
     self.frames['FigUV'].pack(side=Tk.TOP)
     self.frames['BFr'].pack(side=Tk.TOP)
 
@@ -2074,15 +1955,8 @@ class CLEANer(object):
     self.buttons['reload'].pack()
 
     self.canvasUV1.mpl_connect('pick_event', self._onUVPick)
- #   self.canvasUV2.mpl_connect('pick_event', self._onUVPick)
- #   self.canvasUV3.mpl_connect('pick_event', self._onUVPick)
-
     self.canvasUV1.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
-#    self.canvasUV2.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
-#    self.canvasUV3.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
-
     toolbar_frame = Tk.Frame(self.FFTwin)
-   # toolbar_frame.grid(row=21,column=4,columnspan=2)
     toolbar = NavigationToolbar2TkAgg(self.canvasUV1, toolbar_frame)
     toolbar_frame.pack(side=Tk.LEFT)
 
@@ -2098,7 +1972,6 @@ class CLEANer(object):
     vmin = np.min(Toplot)
 
     self.UVPSFPlot = self.UVPSF.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
-  #     pl.setp(self.UVPlotFFTPlot, extent=(-self.UVmax/2.,self.UVmax/2.,-self.UVmax/2.,self.UVmax/2.))
     pl.setp(self.UVPSFPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
     self.UVPSF.set_xlabel(self.parent.ulab)
     self.UVPSF.set_ylabel(self.parent.vlab)
@@ -2111,7 +1984,6 @@ class CLEANer(object):
     vmin = 0.0
 
     self.UVResidPlot = self.UVResid.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
-  #     pl.setp(self.UVPlotFFTPlot, extent=(-self.UVmax/2.,self.UVmax/2.,-self.UVmax/2.,self.UVmax/2.))
     pl.setp(self.UVResidPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
     self.UVPSF.set_xlabel(self.parent.ulab)
     self.UVPSF.set_ylabel(self.parent.vlab)
@@ -2122,11 +1994,8 @@ class CLEANer(object):
     Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.cleanmod))))
 
     vmax = np.max(Toplot)
-#    vmax = np.max(Toplot)
-#    vmin = np.min(Toplot)
 
     self.UVCLEANPlot = self.UVCLEAN.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
-  #     pl.setp(self.UVPlotFFTPlot, extent=(-self.UVmax/2.,self.UVmax/2.,-self.UVmax/2.,self.UVmax/2.))
     pl.setp(self.UVCLEANPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
     self.UVPSF.set_xlabel(self.parent.ulab)
     self.UVPSF.set_ylabel(self.parent.vlab)
@@ -2134,18 +2003,8 @@ class CLEANer(object):
 
     self.UVCLEAN.set_title('UV - CLEAN')
 
-#    self.UVPSF.set_xlim((-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh))
-#    self.UVPSF.set_ylim((-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh))
-#    self.UVResid.set_xlim((-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh))
-#    self.UVResid.set_ylim((-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh))
-#    self.UVCLEAN.set_xlim((-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh))
-#    self.UVCLEAN.set_ylim((-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh))
-
 
     self.canvasUV1.draw()
-#    self.canvasUV2.draw()
-#    self.canvasUV3.draw()
-
 
   def _onUVPick(self,event):
    
@@ -2155,16 +2014,8 @@ class CLEANer(object):
     yi = np.floor((self.parent.UVmax+Up)/(self.parent.UVmax)*self.parent.Npix/2.)
     xi = np.floor((self.parent.UVmax-Vp)/(self.parent.UVmax)*self.parent.Npix/2.)
 
- #   yi = event.mouseevent.y-self.parent.UVSh
- #   xi = event.mouseevent.x-self.parent.UVSh
- #   print event.mouseevent.x , event.mouseevent.y
- #   xi = event.mouseevent.x
- #   yi = event.mouseevent.y
-
-  #  print xi , yi
 
     if xi>0 and yi> 0 and xi<self.parent.Npix and yi< self.parent.Npix:
- #   PSFText, ResidText, CLEANText
       self.PSFText.set_text(self.PSFfmt%self.UVPSFPlot.get_array()[xi,yi])
       self.ResidText.set_text(self.UVfmt%self.UVResidPlot.get_array()[xi,yi])
       self.CLEANText.set_text(self.UVfmt%self.UVCLEANPlot.get_array()[xi,yi])
@@ -2177,75 +2028,11 @@ class CLEANer(object):
     self.canvasUV1.draw()
 
 
-#  def FFT(self):
-#     Np4 = self.parent.Npix/4
-#     if self.ffti:
-#        self.ffti=False
-#        self.CLEANPlot.set_ylabel('Dec offset (as)')
-#        self.CLEANPlot.set_xlabel('RA offset (as)')
-#        self.ResidPlot.set_ylabel('Dec offset (as)')
-#        self.ResidPlot.set_xlabel('RA offset (as)')
-#        self.ResidPlotPlot.set_array(self.residuals[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4])
-
-
-  #   print 'HILIDILI'
 
 
 
 
 
-
-
-
-
-
-
-#oldtb = mpl.backends.backend_gtkagg.NavigationToolbar2GTKAgg
-
-#class CustomToolbar(oldtb):
-#   def __init__(self,canvas_,parent_):
-#     self.toolitems = (
-#         ('Home', 'Lorem ipsum dolor sit amet', 'home', 'home'),
-#         ('Back', 'consectetuer adipiscing elit', 'back', 'back'),
-#         ('Forward', 'sed diam nonummy nibh euismod', 'forward', 'forward'),
-#         (None, None, None, None),
-#         ('Pan', 'tincidunt ut laoreet', 'move', 'pan'),
-#         ('Zoom', 'dolore magna aliquam', 'zoom_to_rect', 'zoom'),
-#         (None, None, None, None),
-#         ('Subplots', 'putamus parum claram', 'subplots', 'configure_subplots'),
-#         ('Save', 'sollemnes in futurum', 'filesave', 'save_figure'),
-#         )
-#     oldtb.__init__(self,canvas_,parent_)
-
-
-#class MyApp(object):
-#    def __init__(self,root):
-#        self.root = root
-#        self._init_app()
-#
-#    # here we embed the figure in the Tk GUI
-#    def _init_app(self):
-#        self.interferometer = Interferometer()
-#      #  self.figure = mpl.figure.Figure()
-#      #  self.ax = self.figure.add_subplot(111)
-#        self.canvas = FigureCanvasTkAgg(self.interferometer.figUV,self.root)
-#        self.toolbar = CustomToolbar(self.canvas,self.root)
-#        self.toolbar.update()
-#        self.plot_widget = self.canvas.get_tk_widget()
-#        self.plot_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-#        self.toolbar.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-#        self.canvas.show()
-##
-##
-##
-##
-#def main():
-#    root = Tkinter.Tk()
-#    app = MyApp(root)
-#    root.mainloop()
-#
-#if __name__ == "__main__":
-#    main()
 
 if __name__ == "__main__":
 
