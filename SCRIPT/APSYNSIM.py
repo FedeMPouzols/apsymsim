@@ -1603,7 +1603,7 @@ class CLEANer(object):
   #  self.CLEANPlot = self.figCL.add_subplot(233,aspect='equal')
 
     self.ResidPlot = self.figCL1.add_subplot(111) #pl.axes([0.01,0.43,0.5,0.5],aspect='equal')
-    self.CLEANPlot = self.figCL2.add_subplot(111) #pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
+    self.CLEANPlot = self.figCL2.add_subplot(111,sharex=self.ResidPlot,sharey=self.ResidPlot) #pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
 
     self.frames = {}
     self.frames['FigFr'] = Tk.Frame(self.me)
@@ -1698,6 +1698,8 @@ class CLEANer(object):
     self.buttons['clean'] = Tk.Button(self.frames['CLOpt'],text="CLEAN",command=self._CLEAN)
     self.buttons['reset'] = Tk.Button(self.frames['CLOpt'],text="RESET",command=self._reset)
     self.buttons['addres'] = Tk.Button(self.frames['CLOpt'],text="+/- Resid",command=self._AddRes)
+    self.buttons['showfft'] = Tk.Button(self.frames['CLOpt'],text="Show FFT",command=self._showFFT)
+
 
     self.buttons['apply'] = Tk.Button(self.frames['GFr'],text="APPLY GAIN",command=self._ApplyGain)
     self.buttons['apply'].pack(side=Tk.RIGHT)
@@ -1709,12 +1711,19 @@ class CLEANer(object):
     self.buttons['clean'].pack(side=Tk.TOP)
     self.buttons['reset'].pack(side=Tk.TOP)
     self.buttons['addres'].pack(side=Tk.TOP)
+    self.buttons['showfft'].pack(side=Tk.TOP)
 
     self.canvas1.mpl_connect('pick_event', self._onPick)
     self.canvas2.mpl_connect('pick_event', self._onPick)
     self.canvas1.mpl_connect('motion_notify_event', self._doMask)
     self.canvas1.mpl_connect('button_release_event',self._onRelease)
     self.canvas1.mpl_connect('button_press_event',self._onPress)
+
+
+ #   toolbar_frame = Tk.Frame(self.me)
+ #   toolbar = NavigationToolbar2TkAgg(self.canvas1, toolbar_frame)
+ #   toolbar_frame.pack(side=Tk.LEFT)
+
 
     self.pressed = -1
     self.xy0 = [0,0]
@@ -1945,6 +1954,8 @@ class CLEANer(object):
     self.resadd = False
     self.ffti = False
 
+    self.totalClean = 0.0
+
     self.canvas1.draw()
     self.canvas2.draw()
 
@@ -1971,7 +1982,9 @@ class CLEANer(object):
        # MODIFY CLEAN MODEL!!
        self.cleanmod += gain*peakval*np.roll(np.roll(self.cleanBeam,peakpos[0]-self.parent.Npix/2,axis=0), peakpos[1]-self.parent.Npix/2,axis=1)
        self.ResidPlotPlot.set_array(self.residuals[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4])
-       self.CLEANPlot.set_title('CLEAN (%i ITER)'%self.totiter)
+
+       self.totalClean += gain*peakval
+       self.CLEANPlot.set_title('CLEAN (%i ITER): %.2e Jy'%(self.totiter,self.totalClean))
 
        if self.resadd:
          toadd = (self.cleanmod + self.residuals)[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
@@ -2001,6 +2014,167 @@ class CLEANer(object):
     helptext.pack()
     Tk.Button(win, text='OK', command=win.destroy).pack()
 
+
+  def _showFFT(self):
+
+    try:
+      self.FFTwin.destroy()
+    except:
+      pass
+
+
+    self.FFTwin = Tk.Toplevel(self.me)
+    self.FFTwin.title("UV space")
+
+    self.figUV1 = pl.figure(figsize=(15,5))    
+  #  self.figUV2 = pl.figure(figsize=(5,5))    
+  #  self.figUV3 = pl.figure(figsize=(5,5))    
+
+  #  self.ResidPlot = self.figCL.add_subplot(231,aspect='equal')
+  #  self.CLEANPlot = self.figCL.add_subplot(233,aspect='equal')
+
+    self.UVPSF = self.figUV1.add_subplot(131,aspect='equal') #pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
+    self.UVResid = self.figUV1.add_subplot(132,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal') #pl.axes([0.01,0.43,0.5,0.5],aspect='equal')
+    self.UVCLEAN = self.figUV1.add_subplot(133,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal') #pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
+
+    self.figUV1.subplots_adjust(left=0.05,right=0.98)
+
+    self.UVfmt = '%.2e Jy'
+    self.PSFfmt = '%.2e'
+
+    self.PSFText = self.UVPSF.text(0.05,0.87,self.PSFfmt%(0.0),
+         transform=self.UVPSF.transAxes,bbox=dict(facecolor='white', 
+         alpha=0.7))
+
+    self.ResidText = self.UVResid.text(0.05,0.87,self.UVfmt%(0.0),
+         transform=self.UVResid.transAxes,bbox=dict(facecolor='white', 
+         alpha=0.7))
+
+    self.CLEANText = self.UVCLEAN.text(0.05,0.87,self.UVfmt%(0.0),
+         transform=self.UVCLEAN.transAxes,bbox=dict(facecolor='white', 
+         alpha=0.7))
+
+
+    self.frames = {}
+    self.frames['FigUV'] = Tk.Frame(self.FFTwin)
+    self.frames['BFr'] = Tk.Frame(self.FFTwin)
+
+    self.canvasUV1 = FigureCanvasTkAgg(self.figUV1, master=self.frames['FigUV'])
+#    self.canvasUV2 = FigureCanvasTkAgg(self.figUV2, master=self.frames['FigUV'])
+#    self.canvasUV3 = FigureCanvasTkAgg(self.figUV3, master=self.frames['FigUV'])
+
+    self.canvasUV1.show()
+#    self.canvasUV2.show()
+#    self.canvasUV3.show()
+
+    self.frames['FigUV'].pack(side=Tk.TOP)
+    self.frames['BFr'].pack(side=Tk.TOP)
+
+    self.buttons['reload'] = Tk.Button(self.frames['BFr'],text="Reload",command=self._FFTRead)
+    self.buttons['reload'].pack()
+
+    self.canvasUV1.mpl_connect('pick_event', self._onUVPick)
+ #   self.canvasUV2.mpl_connect('pick_event', self._onUVPick)
+ #   self.canvasUV3.mpl_connect('pick_event', self._onUVPick)
+
+    self.canvasUV1.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
+#    self.canvasUV2.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
+#    self.canvasUV3.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
+
+    toolbar_frame = Tk.Frame(self.FFTwin)
+   # toolbar_frame.grid(row=21,column=4,columnspan=2)
+    toolbar = NavigationToolbar2TkAgg(self.canvasUV1, toolbar_frame)
+    toolbar_frame.pack(side=Tk.LEFT)
+
+    self._FFTRead()
+
+
+
+  def _FFTRead(self):
+
+    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.parent.beam))))
+
+    vmax = np.max(Toplot)
+    vmin = np.min(Toplot)
+
+    self.UVPSFPlot = self.UVPSF.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
+  #     pl.setp(self.UVPlotFFTPlot, extent=(-self.UVmax/2.,self.UVmax/2.,-self.UVmax/2.,self.UVmax/2.))
+    pl.setp(self.UVPSFPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+    self.UVPSF.set_xlabel(self.parent.ulab)
+    self.UVPSF.set_ylabel(self.parent.vlab)
+
+    self.UVPSF.set_title('UV - PSF')
+
+    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.residuals))))
+
+    vmax = np.max(np.abs(np.fft.fft2(self.parent.dirtymap)))
+    vmin = 0.0
+
+    self.UVResidPlot = self.UVResid.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
+  #     pl.setp(self.UVPlotFFTPlot, extent=(-self.UVmax/2.,self.UVmax/2.,-self.UVmax/2.,self.UVmax/2.))
+    pl.setp(self.UVResidPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+    self.UVPSF.set_xlabel(self.parent.ulab)
+    self.UVPSF.set_ylabel(self.parent.vlab)
+
+    self.UVResid.set_title('UV - RESIDUALS')
+
+
+    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.cleanmod))))
+
+    vmax = np.max(Toplot)
+#    vmax = np.max(Toplot)
+#    vmin = np.min(Toplot)
+
+    self.UVCLEANPlot = self.UVCLEAN.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
+  #     pl.setp(self.UVPlotFFTPlot, extent=(-self.UVmax/2.,self.UVmax/2.,-self.UVmax/2.,self.UVmax/2.))
+    pl.setp(self.UVCLEANPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+    self.UVPSF.set_xlabel(self.parent.ulab)
+    self.UVPSF.set_ylabel(self.parent.vlab)
+
+
+    self.UVCLEAN.set_title('UV - CLEAN')
+
+#    self.UVPSF.set_xlim((-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh))
+#    self.UVPSF.set_ylim((-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh))
+#    self.UVResid.set_xlim((-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh))
+#    self.UVResid.set_ylim((-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh))
+#    self.UVCLEAN.set_xlim((-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh))
+#    self.UVCLEAN.set_ylim((-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh))
+
+
+    self.canvasUV1.draw()
+#    self.canvasUV2.draw()
+#    self.canvasUV3.draw()
+
+
+  def _onUVPick(self,event):
+   
+    Up = event.mouseevent.xdata-self.parent.UVSh
+    Vp = event.mouseevent.ydata+self.parent.UVSh
+
+    yi = np.floor((self.parent.UVmax+Up)/(self.parent.UVmax)*self.parent.Npix/2.)
+    xi = np.floor((self.parent.UVmax-Vp)/(self.parent.UVmax)*self.parent.Npix/2.)
+
+ #   yi = event.mouseevent.y-self.parent.UVSh
+ #   xi = event.mouseevent.x-self.parent.UVSh
+ #   print event.mouseevent.x , event.mouseevent.y
+ #   xi = event.mouseevent.x
+ #   yi = event.mouseevent.y
+
+  #  print xi , yi
+
+    if xi>0 and yi> 0 and xi<self.parent.Npix and yi< self.parent.Npix:
+ #   PSFText, ResidText, CLEANText
+      self.PSFText.set_text(self.PSFfmt%self.UVPSFPlot.get_array()[xi,yi])
+      self.ResidText.set_text(self.UVfmt%self.UVResidPlot.get_array()[xi,yi])
+      self.CLEANText.set_text(self.UVfmt%self.UVCLEANPlot.get_array()[xi,yi])
+    else:
+      self.PSFText.set_text(self.PSFfmt%0.0)
+      self.ResidText.set_text(self.UVfmt%0.0)
+      self.CLEANText.set_text(self.UVfmt%0.0)
+
+
+    self.canvasUV1.draw()
 
 
 #  def FFT(self):
