@@ -48,7 +48,7 @@ import os
 import time
 import sys
 
-__version__ = '0.4-b1'
+__version__ = '0.4-b3'
 
 
 
@@ -130,6 +130,10 @@ Pressing "+/- Resid" will add (or remove) the residuals from the CLEANed
 image.  By default, the residuals are NOT added (i.e., only the restored
 CLEAN components are shown in the CLEAN image).
 
+Pressing "True source (conv.)" will show the true source structure 
+convolved with the CLEAN beam. This is to compare the fidelity of the 
+CLEAN deconvolution algorithm, by comparing the CLEAN image to the 
+true source brightness distribution (downgraded to the CLEAN resolution).
 
 -----------------------------
 HOW TO ADD A CORRUPTING GAIN
@@ -1508,8 +1512,8 @@ class CLEANer(object):
 
     self.Np4 = self.parent.Npix/4
 
-    self.figCL1 = pl.figure(figsize=(5,5))    
-    self.figCL2 = pl.figure(figsize=(5,5))    
+    self.figCL1 = pl.figure(figsize=(6,6))    
+    self.figCL2 = pl.figure(figsize=(6,6))    
 
     self.ResidPlot = self.figCL1.add_subplot(111) #pl.axes([0.01,0.43,0.5,0.5],aspect='equal')
     self.CLEANPlot = self.figCL2.add_subplot(111,sharex=self.ResidPlot,sharey=self.ResidPlot) #pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
@@ -1608,6 +1612,7 @@ class CLEANer(object):
     self.buttons['reset'] = Tk.Button(self.frames['CLOpt'],text="RESET",command=self._reset)
     self.buttons['addres'] = Tk.Button(self.frames['CLOpt'],text="+/- Resid",command=self._AddRes)
     self.buttons['showfft'] = Tk.Button(self.frames['CLOpt'],text="Show FFT",command=self._showFFT)
+    self.buttons['convsource'] = Tk.Button(self.frames['CLOpt'],text="True source (conv.)",command=self._convSource)
 
 
     self.buttons['apply'] = Tk.Button(self.frames['GFr'],text="APPLY GAIN",command=self._ApplyGain)
@@ -1621,6 +1626,7 @@ class CLEANer(object):
     self.buttons['reset'].pack(side=Tk.TOP)
     self.buttons['addres'].pack(side=Tk.TOP)
     self.buttons['showfft'].pack(side=Tk.TOP)
+    self.buttons['convsource'].pack(side=Tk.TOP)
 
     self.canvas1.mpl_connect('pick_event', self._onPick)
     self.canvas2.mpl_connect('pick_event', self._onPick)
@@ -1679,13 +1685,13 @@ class CLEANer(object):
      yi = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.parent.Npix)
      xi = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.parent.Npix)
      Flux = self.residuals[xi,yi]
-     self.ResidText.set_text(self.parent.fmtM%(Flux,RA,Dec))
+     self.ResidText.set_text(self.parent.fmtD%(Flux,RA,Dec))
      if self.resadd:
        Flux = self.cleanmod[xi,yi] + self.residuals[xi,yi]
      else:
        Flux = self.cleanmod[xi,yi]
 
-     self.CLEANText.set_text(self.parent.fmtM%(Flux,RA,Dec))
+     self.CLEANText.set_text(self.parent.fmtD%(Flux,RA,Dec))
 
 
      self.canvas1.draw()
@@ -2026,6 +2032,104 @@ class CLEANer(object):
 
 
     self.canvasUV1.draw()
+
+
+
+
+
+  def _convSource(self):
+
+    try:
+      self.convSource.destroy()
+    except:
+      pass
+
+
+    self.convSource = Tk.Toplevel(self.me)
+    self.convSource.title("True source image")
+
+    self.figCS1 = pl.figure(figsize=(6,6))    
+
+    self.CS1 = self.figCS1.add_subplot(111,aspect='equal') #pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
+
+    self.figCS1.subplots_adjust(left=0.05,right=0.98)
+
+    self.CSText = self.CS1.text(0.05,0.87,self.parent.fmtD%(0.0,0.,0.),
+         transform=self.CS1.transAxes,bbox=dict(facecolor='white', 
+         alpha=0.7))
+
+
+    self.frames = {}
+    self.frames['FigCS'] = Tk.Frame(self.convSource)
+    self.frames['CSFr'] = Tk.Frame(self.convSource)
+
+    self.canvasCS1 = FigureCanvasTkAgg(self.figCS1, master=self.frames['FigCS'])
+
+    self.canvasCS1.show()
+    self.frames['FigCS'].pack(side=Tk.TOP)
+    self.frames['CSFr'].pack(side=Tk.TOP)
+
+    self.buttons['reloadCS'] = Tk.Button(self.frames['CSFr'],text="Reload",command=self._CSRead)
+    self.buttons['reloadCS'].pack()
+
+    self.canvasCS1.mpl_connect('pick_event', self._onCSPick)
+    self.canvasCS1.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
+    toolbar_frame = Tk.Frame(self.convSource)
+    toolbar = NavigationToolbar2TkAgg(self.canvasCS1, toolbar_frame)
+    toolbar_frame.pack(side=Tk.LEFT)
+
+    self._CSRead()
+
+
+
+  def _CSRead(self):
+
+
+    self.CSImage = (np.fft.fftshift(np.fft.ifft2(self.parent.modelfft*np.fft.fft2(np.fft.fftshift(self.cleanBeam))))).real
+
+    self.CS1Plot = self.CS1.imshow(self.CSImage[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4],interpolation='nearest',picker=True, cmap=self.parent.currcmap)
+    modflux = self.parent.dirtymap[self.parent.Nphf,self.parent.Nphf]
+    self.CSText.set_text(self.parent.fmtD%(modflux,0.0,0.0))
+ #        transform=self.CS1.transAxes,bbox=dict(facecolor='white', alpha=0.7))
+    pl.setp(self.CS1Plot, extent=(self.Xaxmax/2.,-self.Xaxmax/2.,-self.Xaxmax/2.,self.Xaxmax/2.))
+
+
+ #   self.CS1Plot = self.CS1.imshow(Toplot,vmin=0.0,vmax=np.max(Toplot),cmap=self.parent.currcmap,picker=True,interpolation='nearest')
+ #   pl.setp(self.CS1Plot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+
+    self.CS1.set_xlabel('RA offset (as)')
+    self.CS1.set_ylabel('Dec offset (as)')
+
+    self.CS1.set_title('TRUE SOURCE - CONVOLVED')
+
+    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.residuals))))
+
+    self.canvasCS1.draw()
+
+
+
+
+
+
+
+
+
+
+
+  def _onCSPick(self,event):
+  
+
+     RA = event.mouseevent.xdata
+     Dec = event.mouseevent.ydata
+  #   print RA, Dec
+     yi = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.parent.Npix)
+     xi = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.parent.Npix)
+     Flux = self.CSImage[xi,yi]
+     self.CSText.set_text(self.parent.fmtD%(Flux,RA,Dec))
+
+     self.canvasCS1.draw()
+
+
 
 
 
