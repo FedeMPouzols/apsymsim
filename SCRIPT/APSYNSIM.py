@@ -1512,21 +1512,23 @@ class CLEANer(object):
 
     self.Np4 = self.parent.Npix/4
 
-    self.figCL1 = pl.figure(figsize=(6,6))    
-    self.figCL2 = pl.figure(figsize=(6,6))    
+    self.figCL1 = pl.figure(figsize=(12,6))    
+  #  self.figCL2 = pl.figure(figsize=(6,6))    
 
-    self.ResidPlot = self.figCL1.add_subplot(111) #pl.axes([0.01,0.43,0.5,0.5],aspect='equal')
-    self.CLEANPlot = self.figCL2.add_subplot(111,sharex=self.ResidPlot,sharey=self.ResidPlot) #pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
+    self.ResidPlot = self.figCL1.add_subplot(121,aspect='equal') #pl.axes([0.01,0.43,0.5,0.5],aspect='equal')
+    self.CLEANPlot = self.figCL1.add_subplot(122,aspect='equal',sharex=self.ResidPlot,sharey=self.ResidPlot) #pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
+    self.ResidPlot.set_adjustable('box-forced')
+    self.CLEANPlot.set_adjustable('box-forced')
 
     self.frames = {}
     self.frames['FigFr'] = Tk.Frame(self.me)
     self.frames['GFr'] = Tk.Frame(self.me)
 
     self.canvas1 = FigureCanvasTkAgg(self.figCL1, master=self.frames['FigFr'])
-    self.canvas2 = FigureCanvasTkAgg(self.figCL2, master=self.frames['FigFr'])
+  #  self.canvas2 = FigureCanvasTkAgg(self.figCL2, master=self.frames['FigFr'])
 
     self.canvas1.show()
-    self.canvas2.show()
+  #  self.canvas2.show()
 
     self.frames['FigFr'].pack(side=Tk.TOP)
     self.frames['GFr'].pack(side=Tk.TOP)
@@ -1603,9 +1605,9 @@ class CLEANer(object):
     Ntext.pack(side=Tk.LEFT)
     self.entries['Niter'].pack(side=Tk.RIGHT)
 
-    self.canvas1.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
     self.frames['CLOpt'].pack(side=Tk.LEFT)
-    self.canvas2.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
+#    self.canvas2.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
+    self.canvas1.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
 
     self.buttons = {}
     self.buttons['clean'] = Tk.Button(self.frames['CLOpt'],text="CLEAN",command=self._CLEAN)
@@ -1629,7 +1631,7 @@ class CLEANer(object):
     self.buttons['convsource'].pack(side=Tk.TOP)
 
     self.canvas1.mpl_connect('pick_event', self._onPick)
-    self.canvas2.mpl_connect('pick_event', self._onPick)
+#    self.canvas2.mpl_connect('pick_event', self._onPick)
     self.canvas1.mpl_connect('motion_notify_event', self._doMask)
     self.canvas1.mpl_connect('button_release_event',self._onRelease)
     self.canvas1.mpl_connect('button_press_event',self._onPress)
@@ -1695,7 +1697,7 @@ class CLEANer(object):
 
 
      self.canvas1.draw()
-     self.canvas2.draw()
+   #  self.canvas2.draw()
 
 
   def _onPress(self,event):
@@ -1741,7 +1743,7 @@ class CLEANer(object):
       self.ResidPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
 
       self.canvas1.draw()
-      self.canvas2.draw()
+     # self.canvas2.draw()
 
  #     print 'WAS RELEASED ',self.moved,np.sum(self.mask),self.xy0,x1,y1
       self.Box.set_data([0.,0.,0.,0.,0.],[0.,0.,0.,0.,0.])
@@ -1775,7 +1777,7 @@ class CLEANer(object):
     self.CLEANPlotPlot.norm.vmax = np.max(toadd)
 
     self.canvas1.draw()
-    self.canvas2.draw()
+ #   self.canvas2.draw()
     del toadd
 
 
@@ -1818,6 +1820,7 @@ class CLEANer(object):
     self.ResidPlot.set_title('RESIDUALS')
 
     self.MaskPlot = self.ResidPlot.contour(np.linspace(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Npix/2),np.linspace(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Npix/2),self.mask[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4],levels=[0.5])
+  #  pl.setp(self.MaskPlot, extent=(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
 
     self.ResidPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
     self.ResidPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
@@ -1836,6 +1839,9 @@ class CLEANer(object):
     self.CLEANPlot.set_xlabel('RA offset (as)')
     self.CLEANPlot.set_title('CLEAN (0 ITER)')
     self.CLEANPlotPlot.set_array(self.cleanmod[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4])
+
+    self.CLEANPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
+    self.CLEANPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
 
     self.totiter = 0
 
@@ -1856,7 +1862,7 @@ class CLEANer(object):
     self.totalClean = 0.0
 
     self.canvas1.draw()
-    self.canvas2.draw()
+  #  self.canvas2.draw()
 
     del ddX, ddY, modflux
 
@@ -1895,7 +1901,7 @@ class CLEANer(object):
        self.CLEANPlotPlot.norm.vmax = np.max(toadd)
 
        self.canvas1.draw()
-       self.canvas2.draw()
+     #  self.canvas2.draw()
 
      del psf, toadd,tempres, goods
 
