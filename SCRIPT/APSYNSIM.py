@@ -854,7 +854,6 @@ class Interferometer(object):
       pl.setp(self.modelPlotPlot, extent=(self.Xaxmax/2.,-self.Xaxmax/2.,-self.Xaxmax/2.,self.Xaxmax/2.))
       self.modelPlot.set_ylabel('Dec offset (as)')
       self.modelPlot.set_xlabel('RA offset (as)')
-      self.modelPlot.set_title('MODEL IMAGE')
       self._plotAntennas(redo=False)
     else:
       self.modelPlotPlot.set_data(np.power(self.modelim[Np4:self.Npix-Np4,Np4:self.Npix-Np4],self.gamma))
@@ -863,6 +862,8 @@ class Interferometer(object):
       self.modelPlotPlot.norm.vmax = extr[1]
       pl.setp(self.modelPlotPlot, extent=(self.Xaxmax/2.,-self.Xaxmax/2.,-self.Xaxmax/2.,self.Xaxmax/2.))
 
+    totflux = np.sum(self.modelim[Np4:self.Npix-Np4,Np4:self.Npix-Np4])
+    self.modelPlot.set_title('MODEL IMAGE: %.2e Jy'%totflux)
 
 
   def _plotModelFFT(self,redo=True):
@@ -1589,9 +1590,9 @@ class CLEANer(object):
     self.entries['H1'].pack(side=Tk.RIGHT)
     self.entries['H1'].set(self.parent.nH)
 
-    self.entries['Amp'] = Tk.Scale(self.frames['AmpFr'],from_=0.1,to=10.,orient=Tk.HORIZONTAL,length=200)
+    self.entries['Amp'] = Tk.Scale(self.frames['AmpFr'],from_=0.1,to=1000.,orient=Tk.HORIZONTAL,length=200)
     self.entries['Phas'] = Tk.Scale(self.frames['PhasFr'],from_=-180.,to=180.,orient=Tk.HORIZONTAL,length=200)
-    AmpText = Tk.Label(self.frames['AmpFr'],text="Amplitude gain: ",width=15)
+    AmpText = Tk.Label(self.frames['AmpFr'],text="Amplitude gain (%): ",width=15)
     PhasText = Tk.Label(self.frames['PhasFr'],text="Phase Gain: ",width=15)
     AmpText.pack(side=Tk.LEFT)
     self.entries['Amp'].pack(side=Tk.RIGHT)
@@ -1655,6 +1656,7 @@ class CLEANer(object):
     try:
       an1 = int(self.entries['Ant1'].curselection()[0])
     except:
+      showinfo('WARNING!','No antenna selected!')
       return
 
     try:
@@ -1666,7 +1668,7 @@ class CLEANer(object):
     if an2==an1:
       an2=-1
 
-    G = float(self.entries['Amp'].get())*np.exp(1.j*float(self.entries['Phas'].get())*np.pi/180.)
+    G = float(self.entries['Amp'].get())/100.*np.exp(1.j*float(self.entries['Phas'].get())*np.pi/180.)
     H0 = int(self.entries['H0'].get())
     H1 = int(self.entries['H1'].get())
 
@@ -1787,7 +1789,7 @@ class CLEANer(object):
     self.entries['Ant2'].delete(0,Tk.END)
     self.entries['H0'].set(0)
     self.entries['H1'].set(self.parent.nH)
-    self.entries['Amp'].set(1)
+    self.entries['Amp'].set(100)
     self.entries['Phas'].set(0)
 
     for i in range(self.parent.Nant):
@@ -1847,14 +1849,29 @@ class CLEANer(object):
 
     # DERIVE THE CLEAN BEAM
     MainLobe = np.where(self.parent.beam>0.75)
-    dX = MainLobe[0]-self.parent.Npix/2 ; dY = MainLobe[1]-self.parent.Npix/2
-    fit = spfit.leastsq(lambda x: np.exp(-(dX*dX*x[0]+dY*dY*x[1]+dX*dY*x[2]))-self.parent.beam[MainLobe],[0.,0.,0.])
-    print 'BEAM FIT: ',fit[0]
     self.cleanBeam = np.zeros(np.shape(self.residuals))
-    ddX = np.outer(np.ones(self.parent.Npix),np.arange(-self.parent.Npix/2,self.parent.Npix/2).astype(np.float64))
-    ddY = np.outer(np.arange(-self.parent.Npix/2,self.parent.Npix/2).astype(np.float64),np.ones(self.parent.Npix))
 
-    self.cleanBeam[:] = np.exp(-(ddY*ddY*fit[0][0]+ddX*ddX*fit[0][1]+ddY*ddX*fit[0][2]))
+    if len(MainLobe[0]) < 5:
+      showinfo('ERROR!', 'The main lobe of the PSF is too narrow!\n CLEAN model will not be restored')
+      self.cleanBeam[:] = 0.0
+      self.cleanBeam[self.parent.Npix/2,self.parent.Npix/2] = 1.0
+    else:
+      dX = MainLobe[0]-self.parent.Npix/2 ; dY = MainLobe[1]-self.parent.Npix/2
+      try:
+        fit = spfit.leastsq(lambda x: np.exp(-(dX*dX*x[0]+dY*dY*x[1]+dX*dY*x[2]))-self.parent.beam[MainLobe],[0.,0.,0.])
+        print 'BEAM FIT: ',fit[0]
+        ddX = np.outer(np.ones(self.parent.Npix),np.arange(-self.parent.Npix/2,self.parent.Npix/2).astype(np.float64))
+        ddY = np.outer(np.arange(-self.parent.Npix/2,self.parent.Npix/2).astype(np.float64),np.ones(self.parent.Npix))
+
+        self.cleanBeam[:] = np.exp(-(ddY*ddY*fit[0][0]+ddX*ddX*fit[0][1]+ddY*ddX*fit[0][2]))
+        del ddX, ddY
+
+      except:
+        showinfo('ERROR!', 'Problems fitting the PSF main lobe!\n CLEAN model will not be restored')
+        self.cleanBeam[:] = 0.0
+        self.cleanBeam[self.parent.Npix/2,self.parent.Npix/2] = 1.0
+
+
 
     self.resadd = False
     self.ffti = False
@@ -1864,7 +1881,8 @@ class CLEANer(object):
     self.canvas1.draw()
   #  self.canvas2.draw()
 
-    del ddX, ddY, modflux
+    del modflux
+
 
   def _CLEAN(self):
 
