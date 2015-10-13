@@ -118,7 +118,10 @@ as you want.
 
 The CLEAN gain and number of iterations can be changed in the text boxes.
 Pressing CLEAN executes the iterations, refreshing all images in real time.
-You can further click on CLEAN, to continue deconvolving.
+You can further click on CLEAN, to continue deconvolving. The box "Thres"
+is the CLEAN threshold (in Jy per beam). Setting it to negative values will 
+allow CLEANing negative components.
+
 
 Pressing RESET will undo all CLEANING. 
 
@@ -1536,18 +1539,28 @@ class CLEANer(object):
 
 
     self.frames['CLOpt'] = Tk.Frame(self.frames['FigFr'])
+
     self.frames['Gain'] = Tk.Frame(self.frames['CLOpt'])
     self.frames['Niter'] = Tk.Frame(self.frames['CLOpt'])
+    self.frames['Thres'] = Tk.Frame(self.frames['CLOpt'])
+
     Gtext = Tk.Label(self.frames['Gain'],text="Gain:  ")
     Ntext = Tk.Label(self.frames['Niter'],text="# iter:")
+    Ttext = Tk.Label(self.frames['Thres'],text="Thres (Jy/b):")
 
     self.entries = {}
     self.entries['Gain'] = Tk.Entry(self.frames['Gain'])
     self.entries['Gain'].insert(0,"0.1")
     self.entries['Gain'].config(width=5)
+
     self.entries['Niter'] = Tk.Entry(self.frames['Niter'])
     self.entries['Niter'].insert(0,"100")
     self.entries['Niter'].config(width=5)
+
+    self.entries['Thres'] = Tk.Entry(self.frames['Thres'])
+    self.entries['Thres'].insert(0,"0.0")
+    self.entries['Thres'].config(width=5)
+
 
 
     GTitle = Tk.Label(self.frames['GFr'],text="CALIBRATION ERROR:")
@@ -1606,6 +1619,9 @@ class CLEANer(object):
     Ntext.pack(side=Tk.LEFT)
     self.entries['Niter'].pack(side=Tk.RIGHT)
 
+    Ttext.pack(side=Tk.LEFT)
+    self.entries['Thres'].pack(side=Tk.RIGHT)
+
     self.frames['CLOpt'].pack(side=Tk.LEFT)
 #    self.canvas2.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
     self.canvas1.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
@@ -1625,6 +1641,8 @@ class CLEANer(object):
 
     self.frames['Gain'].pack(side=Tk.TOP)
     self.frames['Niter'].pack(side=Tk.TOP)
+    self.frames['Thres'].pack(side=Tk.TOP)
+
     self.buttons['clean'].pack(side=Tk.TOP)
     self.buttons['reset'].pack(side=Tk.TOP)
     self.buttons['addres'].pack(side=Tk.TOP)
@@ -1848,7 +1866,7 @@ class CLEANer(object):
     self.totiter = 0
 
     # DERIVE THE CLEAN BEAM
-    MainLobe = np.where(self.parent.beam>0.75)
+    MainLobe = np.where(self.parent.beam>0.6)
     self.cleanBeam = np.zeros(np.shape(self.residuals))
 
     if len(MainLobe[0]) < 5:
@@ -1857,15 +1875,20 @@ class CLEANer(object):
       self.cleanBeam[self.parent.Npix/2,self.parent.Npix/2] = 1.0
     else:
       dX = MainLobe[0]-self.parent.Npix/2 ; dY = MainLobe[1]-self.parent.Npix/2
+    #  if True:
       try:
-        fit = spfit.leastsq(lambda x: np.exp(-(dX*dX*x[0]+dY*dY*x[1]+dX*dY*x[2]))-self.parent.beam[MainLobe],[0.,0.,0.])
+        fit = spfit.leastsq(lambda x: np.exp(-(dX*dX*x[0]+dY*dY*x[1]+dX*dY*x[2]))-self.parent.beam[MainLobe],[1.,1.,0.])
         print 'BEAM FIT: ',fit[0]
+    #    fit = spfit.minimize(lambda x: np.sum(np.power(np.exp(-(dX*dX*x[0]+dY*dY*x[1]+dX*dY*x[2]))-self.parent.beam[MainLobe],2.)),[1.,1.,0.],method='TNC',bounds=((0.,None),(0.,None),(None,None)))
+     #   print 'BEAM FIT: ',fit.x
         ddX = np.outer(np.ones(self.parent.Npix),np.arange(-self.parent.Npix/2,self.parent.Npix/2).astype(np.float64))
         ddY = np.outer(np.arange(-self.parent.Npix/2,self.parent.Npix/2).astype(np.float64),np.ones(self.parent.Npix))
 
         self.cleanBeam[:] = np.exp(-(ddY*ddY*fit[0][0]+ddX*ddX*fit[0][1]+ddY*ddX*fit[0][2]))
-        del ddX, ddY
+      #  self.cleanBeam[:] = np.exp(-(ddY*ddY*fit.x[0]+ddX*ddX*fit.x[1]+ddY*ddX*fit.x[2]))
 
+        del ddX, ddY
+    #  else:
       except:
         showinfo('ERROR!', 'Problems fitting the PSF main lobe!\n CLEAN model will not be restored')
         self.cleanBeam[:] = 0.0
@@ -1894,10 +1917,27 @@ class CLEANer(object):
        tempres = self.residuals*self.mask
 
      psf = self.parent.beam
-     gain = float(self.entries['Gain'].get())
-     niter = int(self.entries['Niter'].get())
+
+     try:
+       gain = float(self.entries['Gain'].get())
+       niter = int(self.entries['Niter'].get())
+       thrs = float(self.entries['Thres'].get())
+     except:
+       showinfo('ERROR!','Please, check the content of Gain, # Iter, and Thres!\nShould be numbers!')
+
+
      for i in range(niter):
        self.totiter += 1
+
+       if thrs != 0.0:
+         tempres[tempres<thrs] = 0.0
+         if thrs < 0.0:
+           tempres = np.abs(tempres)
+
+         if np.sum(tempres)==0.0:
+           showinfo('INFO','Threshold reached in CLEAN masks!')
+           break
+
        peakpos = np.unravel_index(np.argmax(tempres),np.shape(self.residuals))
        peakval = self.residuals[peakpos[0],peakpos[1]]
        self.residuals -= gain*peakval*np.roll(np.roll(psf,peakpos[0]-self.parent.Npix/2,axis=0), peakpos[1]-self.parent.Npix/2,axis=1)
@@ -1919,10 +1959,14 @@ class CLEANer(object):
        self.CLEANPlotPlot.norm.vmax = np.max(toadd)
 
        self.canvas1.draw()
-     #  self.canvas2.draw()
 
-     del psf, toadd,tempres, goods
-
+# Re-draw if threshold reached:
+     self.canvas1.draw()
+     del tempres, psf, goods
+     try:
+       del toadd
+     except:
+       pass
 
   def _getHelp(self):
     win = Tk.Toplevel(self.me)
