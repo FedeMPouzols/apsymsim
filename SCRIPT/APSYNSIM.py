@@ -48,7 +48,7 @@ import os
 import time
 import sys
 
-__version__ = '0.4-b3'
+__version__ = '1.0.0'
 
 
 
