@@ -48,7 +48,7 @@ import os
 import time
 import sys
 
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 
 
 
@@ -132,6 +132,12 @@ antenna positions, etc.).
 Pressing "+/- Resid" will add (or remove) the residuals from the CLEANed 
 image.  By default, the residuals are NOT added (i.e., only the restored
 CLEAN components are shown in the CLEAN image).
+
+Pressing "(Un)restore" will restore (or unrestore) the CLEAN model with
+the CLEAN beam when plotting. Default status is to apply the restore.
+
+Pressing "Rescale" will rescale the color palette (e.g., to see better
+the structure of the residuals).
 
 Pressing "True source (conv.)" will show the true source structure 
 convolved with the CLEAN beam. This is to compare the fidelity of the 
@@ -641,6 +647,16 @@ class Interferometer(object):
     self._plotAntennas(redo=False,rescale=True)
     self._plotDirty(redo=False)
 
+    self.beamText.set_text(self.fmtB%(1.0,0.0,0.0))
+    newtext = self.fmtVis%(self.totflux,0.0)
+    self.visText.set_text(newtext)
+    dirflux = self.dirtymap[self.Nphf,self.Nphf]
+    modflux = self.modelim[self.Nphf,self.Nphf]
+    self.dirtyText.set_text(self.fmtD%(dirflux,0.0,0.0))
+    self.modelText.set_text(self.fmtM%(modflux,0.0,0.0))
+    self.basText.set_text(self.fmtBas%(0,0,0.0))
+    self.antPlotBas.set_data([[0],[0]])
+    
     pl.draw()
     self.canvas.draw()
 
@@ -865,8 +881,8 @@ class Interferometer(object):
       self.modelPlotPlot.norm.vmax = extr[1]
       pl.setp(self.modelPlotPlot, extent=(self.Xaxmax/2.,-self.Xaxmax/2.,-self.Xaxmax/2.,self.Xaxmax/2.))
 
-    totflux = np.sum(self.modelim[Np4:self.Npix-Np4,Np4:self.Npix-Np4])
-    self.modelPlot.set_title('MODEL IMAGE: %.2e Jy'%totflux)
+    self.totflux = np.sum(self.modelim[Np4:self.Npix-Np4,Np4:self.Npix-Np4])
+    self.modelPlot.set_title('MODEL IMAGE: %.2e Jy'%self.totflux)
 
 
   def _plotModelFFT(self,redo=True):
@@ -936,6 +952,7 @@ class Interferometer(object):
    if redo:
     toplot = np.array(self.antPos[:self.Nant])
     self.antPlot.cla()
+    self.antPlotBas = self.antPlot.plot([0],[0],'-r')[0]
     self.antPlotPlot = self.antPlot.plot(toplot[:,0],toplot[:,1],'og', picker=5)[0]
     self.antPlot.set_xlim((-self.Xmax,self.Xmax))
     self.antPlot.set_ylim((-self.Xmax,self.Xmax))
@@ -954,6 +971,8 @@ class Interferometer(object):
     self.latText = self.UVPlot.text(0.05,0.87,self.fmtH%(self.lat/self.deg2rad,self.dec/self.deg2rad,self.Hcov[0]/self.Hfac,self.Hcov[1]/self.Hfac),transform=self.UVPlot.transAxes)
     self.latText.set_color('orange')
     self.basText = self.UVPlot.text(0.05,0.02,self.fmtBas%(0,0,0.0),transform=self.UVPlot.transAxes)
+    self.antPlotBas.set_data([[0],[0]])
+
     self.visText = self.UVPlot.text(0.05,0.08,self.fmtVis%(0.0,0.0),transform=self.UVPlot.transAxes)
     self.visText.set_color('orange')
 
@@ -1054,6 +1073,7 @@ class Interferometer(object):
 
        newtext = self.fmtBas%(n1+1,n2+1,H)
        self.basText.set_text(newtext)
+       self.antPlotBas.set_data([[self.antPos[n1][0],self.antPos[n2][0]],[self.antPos[n1][1],self.antPos[n2][1]]])
        pl.draw()
        self.canvas.draw()
      else:
@@ -1065,6 +1085,7 @@ class Interferometer(object):
        Phas, Amp = np.angle(Flux,deg=True), np.abs(Flux)
        newtext = self.fmtVis%(Amp,Phas)
        self.visText.set_text(newtext)
+   #    self.antPlotBas.set_data([[0],[0]])
        pl.draw()
        self.canvas.draw()
 
@@ -1630,6 +1651,9 @@ class CLEANer(object):
     self.buttons['clean'] = Tk.Button(self.frames['CLOpt'],text="CLEAN",command=self._CLEAN)
     self.buttons['reset'] = Tk.Button(self.frames['CLOpt'],text="RESET",command=self._reset)
     self.buttons['addres'] = Tk.Button(self.frames['CLOpt'],text="+/- Resid",command=self._AddRes)
+    self.buttons['dorestore'] = Tk.Button(self.frames['CLOpt'],text="(Un)restore",command=self._doRestore)
+    self.buttons['dorescale'] = Tk.Button(self.frames['CLOpt'],text="Rescale",command=self._doRescale)
+
     self.buttons['showfft'] = Tk.Button(self.frames['CLOpt'],text="Show FFT",command=self._showFFT)
     self.buttons['convsource'] = Tk.Button(self.frames['CLOpt'],text="True source (conv.)",command=self._convSource)
 
@@ -1646,11 +1670,12 @@ class CLEANer(object):
     self.buttons['clean'].pack(side=Tk.TOP)
     self.buttons['reset'].pack(side=Tk.TOP)
     self.buttons['addres'].pack(side=Tk.TOP)
+    self.buttons['dorestore'].pack(side=Tk.TOP)
+    self.buttons['dorescale'].pack(side=Tk.TOP)
     self.buttons['showfft'].pack(side=Tk.TOP)
     self.buttons['convsource'].pack(side=Tk.TOP)
 
     self.canvas1.mpl_connect('pick_event', self._onPick)
-#    self.canvas2.mpl_connect('pick_event', self._onPick)
     self.canvas1.mpl_connect('motion_notify_event', self._doMask)
     self.canvas1.mpl_connect('button_release_event',self._onRelease)
     self.canvas1.mpl_connect('button_press_event',self._onPress)
@@ -1665,8 +1690,50 @@ class CLEANer(object):
     self.xy0 = [0,0]
     self.moved = False
     self.resadd = False
+    self.dorestore = True
     self._makeMask()
     self._reCalib()
+
+
+  def _doRestore(self):
+
+   if self.dorestore:
+    self.dorestore = False
+    toadd = self.cleanmodd[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+
+   else:
+    self.dorestore = True
+    if self.resadd:
+     toadd = (self.cleanmod + self.residuals)[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+    else:
+     toadd = self.cleanmod[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+
+
+   self.CLEANPlotPlot.set_array(toadd)
+   self.CLEANPlotPlot.norm.vmin = np.min(toadd)
+   self.CLEANPlotPlot.norm.vmax = np.max(toadd)
+   self.canvas1.draw()
+   del toadd
+
+
+  def _doRescale(self):
+
+  # if True:
+    clarr = self.CLEANPlotPlot.get_array()
+    self.CLEANPlotPlot.norm.vmin = np.min(clarr)
+    self.CLEANPlotPlot.norm.vmax = np.max(clarr)
+    self.CLEANPlotPlot.set_array(clarr)
+    rsarr = self.ResidPlotPlot.get_array()
+    self.ResidPlotPlot.norm.vmin = np.min(rsarr)
+    self.ResidPlotPlot.norm.vmax = np.max(rsarr)
+    self.ResidPlotPlot.set_array(rsarr)
+    del clarr, rsarr
+
+  # self.CLEANPlot.autoscale() #.norm.vmin = np.min(clarr)
+    
+    self.canvas1.draw()
+
+
 
 
   def _ApplyGain(self):
@@ -1708,10 +1775,14 @@ class CLEANer(object):
      xi = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.parent.Npix)
      Flux = self.residuals[xi,yi]
      self.ResidText.set_text(self.parent.fmtD%(Flux,RA,Dec))
-     if self.resadd:
+     if self.dorestore:
+      if self.resadd:
        Flux = self.cleanmod[xi,yi] + self.residuals[xi,yi]
-     else:
+      else:
        Flux = self.cleanmod[xi,yi]
+     else:
+       Flux = self.cleanmodd[xi,yi]
+
 
      self.CLEANText.set_text(self.parent.fmtD%(Flux,RA,Dec))
 
@@ -1785,6 +1856,9 @@ class CLEANer(object):
 
   def _AddRes(self):
 
+    if not self.dorestore:
+      showinfo('ERROR','Cannot add residual to the (unrestored) CLEAN model!\nRestore first!')
+
     if self.resadd:
       self.resadd = False
       toadd = self.cleanmod[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
@@ -1824,6 +1898,7 @@ class CLEANer(object):
     extr = [np.min(self.parent.dirtymap),np.max(self.parent.dirtymap)]
 
     self.ResidPlot.cla()
+    self.dorestore = True
 
     self.ResidPlotPlot = self.ResidPlot.imshow(self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4],interpolation='nearest',picker=True, cmap=self.parent.currcmap)
     modflux = self.parent.dirtymap[self.parent.Nphf,self.parent.Nphf]
@@ -1848,6 +1923,7 @@ class CLEANer(object):
 
     self.residuals = np.copy(self.parent.dirtymap)
     self.cleanmod = np.zeros(np.shape(self.parent.dirtymap))
+    self.cleanmodd = np.zeros(np.shape(self.parent.dirtymap))
 
     self.CLEANPlot.cla()
     self.CLEANPlotPlot = self.CLEANPlot.imshow(self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4],interpolation='nearest',picker=True, cmap=self.parent.currcmap)
@@ -1897,6 +1973,7 @@ class CLEANer(object):
 
 
     self.resadd = False
+    self.dorestore = True
     self.ffti = False
 
     self.totalClean = 0.0
@@ -1943,16 +2020,21 @@ class CLEANer(object):
        self.residuals -= gain*peakval*np.roll(np.roll(psf,peakpos[0]-self.parent.Npix/2,axis=0), peakpos[1]-self.parent.Npix/2,axis=1)
        tempres[goods] = self.residuals[goods]
        # MODIFY CLEAN MODEL!!
+       self.cleanmodd[peakpos[0],peakpos[1]] += gain*peakval
        self.cleanmod += gain*peakval*np.roll(np.roll(self.cleanBeam,peakpos[0]-self.parent.Npix/2,axis=0), peakpos[1]-self.parent.Npix/2,axis=1)
        self.ResidPlotPlot.set_array(self.residuals[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4])
 
        self.totalClean += gain*peakval
        self.CLEANPlot.set_title('CLEAN (%i ITER): %.2e Jy'%(self.totiter,self.totalClean))
 
-       if self.resadd:
+       if self.dorestore:
+        if self.resadd:
          toadd = (self.cleanmod + self.residuals)[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
-       else:
+        else:
          toadd = self.cleanmod[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+       else:
+         toadd = self.cleanmodd[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+
 
        self.CLEANPlotPlot.set_array(toadd)
        self.CLEANPlotPlot.norm.vmin = np.min(toadd)
@@ -1991,13 +2073,26 @@ class CLEANer(object):
     self.FFTwin = Tk.Toplevel(self.me)
     self.FFTwin.title("UV space")
 
-    self.figUV1 = pl.figure(figsize=(15,5))    
+    self.figUV1 = pl.figure(figsize=(8.5,7))    
 
-    self.UVPSF = self.figUV1.add_subplot(131,aspect='equal') #pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
-    self.UVResid = self.figUV1.add_subplot(132,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal') #pl.axes([0.01,0.43,0.5,0.5],aspect='equal')
-    self.UVCLEAN = self.figUV1.add_subplot(133,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal') #pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
+    self.UVPSF = self.figUV1.add_subplot(231,aspect='equal')
+    pl.setp(self.UVPSF.get_xticklabels(),visible=False)
+    self.UVCLEANMOD = self.figUV1.add_subplot(232,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal')
+    pl.setp(self.UVCLEANMOD.get_xticklabels(),visible=False)
+    pl.setp(self.UVCLEANMOD.get_yticklabels(),visible=False)
 
-    self.figUV1.subplots_adjust(left=0.05,right=0.98)
+    self.UVResid = self.figUV1.add_subplot(234,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal')
+    self.UVCLEAN = self.figUV1.add_subplot(235,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal')
+    pl.setp(self.UVCLEAN.get_yticklabels(),visible=False)
+
+    self.UVSOURCE = self.figUV1.add_subplot(233,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal')
+    pl.setp(self.UVSOURCE.get_xticklabels(),visible=False)
+    pl.setp(self.UVSOURCE.get_yticklabels(),visible=False)
+
+    self.UVSOURCECONV = self.figUV1.add_subplot(236,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal')
+    pl.setp(self.UVSOURCECONV.get_yticklabels(),visible=False)
+
+    self.figUV1.subplots_adjust(left=0.1,right=0.98,top=0.90,bottom=0.15,wspace=0.02,hspace=0.15)
 
     self.UVfmt = '%.2e Jy'
     self.PSFfmt = '%.2e'
@@ -2012,6 +2107,18 @@ class CLEANer(object):
 
     self.CLEANText = self.UVCLEAN.text(0.05,0.87,self.UVfmt%(0.0),
          transform=self.UVCLEAN.transAxes,bbox=dict(facecolor='white', 
+         alpha=0.7))
+
+    self.CLEANMODText = self.UVCLEANMOD.text(0.05,0.87,self.UVfmt%(0.0),
+         transform=self.UVCLEANMOD.transAxes,bbox=dict(facecolor='white', 
+         alpha=0.7))
+
+    self.UVSOURCEText = self.UVSOURCE.text(0.05,0.87,self.UVfmt%(0.0),
+         transform=self.UVSOURCE.transAxes,bbox=dict(facecolor='white', 
+         alpha=0.7))
+
+    self.UVSOURCECONVText = self.UVSOURCECONV.text(0.05,0.87,self.UVfmt%(0.0),
+         transform=self.UVSOURCECONV.transAxes,bbox=dict(facecolor='white', 
          alpha=0.7))
 
 
@@ -2047,7 +2154,6 @@ class CLEANer(object):
 
     self.UVPSFPlot = self.UVPSF.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
     pl.setp(self.UVPSFPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
-    self.UVPSF.set_xlabel(self.parent.ulab)
     self.UVPSF.set_ylabel(self.parent.vlab)
 
     self.UVPSF.set_title('UV - PSF')
@@ -2059,10 +2165,10 @@ class CLEANer(object):
 
     self.UVResidPlot = self.UVResid.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
     pl.setp(self.UVResidPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
-    self.UVPSF.set_xlabel(self.parent.ulab)
-    self.UVPSF.set_ylabel(self.parent.vlab)
+    self.UVResid.set_xlabel(self.parent.ulab)
+    self.UVResid.set_ylabel(self.parent.vlab)
 
-    self.UVResid.set_title('UV - RESIDUALS')
+    self.UVResid.set_title('UV - RESIDUALS (REST.)')
 
 
     Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.cleanmod))))
@@ -2071,14 +2177,46 @@ class CLEANer(object):
 
     self.UVCLEANPlot = self.UVCLEAN.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
     pl.setp(self.UVCLEANPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
-    self.UVPSF.set_xlabel(self.parent.ulab)
-    self.UVPSF.set_ylabel(self.parent.vlab)
+    self.UVCLEAN.set_xlabel(self.parent.ulab)
+
+    self.UVCLEAN.set_title('UV - CLEAN (REST.)')
+
+    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.cleanmodd))))
+
+    vmax = np.max(Toplot)
 
 
-    self.UVCLEAN.set_title('UV - CLEAN')
+    self.UVCLEANMODPlot = self.UVCLEANMOD.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
+    pl.setp(self.UVCLEANMODPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+
+    self.UVCLEANMOD.set_title('UV - CLEAN (MODEL)')
+
+
+    Toplot = np.fft.fftshift(np.abs(self.parent.modelfft*np.fft.fft2(self.cleanBeam)))
+
+    vmax = np.max(Toplot)
+
+    self.UVSOURCECONVPlot = self.UVSOURCECONV.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
+    pl.setp(self.UVSOURCECONVPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+
+    self.UVSOURCECONV.set_title('UV - SOURCE (REST.)')
+
+
+
+    Toplot = np.fft.fftshift(np.abs(self.parent.modelfft))
+
+    vmax = np.max(Toplot)
+
+    self.UVSOURCEPlot = self.UVSOURCE.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
+    pl.setp(self.UVSOURCEPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+
+    self.UVSOURCE.set_title('UV - SOURCE')
+
+
 
 
     self.canvasUV1.draw()
+
 
   def _onUVPick(self,event):
    
@@ -2093,10 +2231,16 @@ class CLEANer(object):
       self.PSFText.set_text(self.PSFfmt%self.UVPSFPlot.get_array()[xi,yi])
       self.ResidText.set_text(self.UVfmt%self.UVResidPlot.get_array()[xi,yi])
       self.CLEANText.set_text(self.UVfmt%self.UVCLEANPlot.get_array()[xi,yi])
+      self.CLEANMODText.set_text(self.UVfmt%self.UVCLEANMODPlot.get_array()[xi,yi])
+      self.UVSOURCEText.set_text(self.UVfmt%self.UVSOURCEPlot.get_array()[xi,yi])
+      self.UVSOURCECONVText.set_text(self.UVfmt%self.UVSOURCECONVPlot.get_array()[xi,yi])
     else:
       self.PSFText.set_text(self.PSFfmt%0.0)
       self.ResidText.set_text(self.UVfmt%0.0)
       self.CLEANText.set_text(self.UVfmt%0.0)
+      self.CLEANMODText.set_text(self.UVfmt%0.0)
+      self.UVSOURCEText.set_text(self.UVfmt%0.0)
+      self.UVSOURCECONVText.set_text(self.UVfmt%0.0)
 
 
     self.canvasUV1.draw()

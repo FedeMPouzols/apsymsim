@@ -1,3 +1,14 @@
+v 1.1.0 - DECEMBER 2015.
+
+- Added new plots in the "show FFT" button.
+
+- A baseline line is plotted in the array configuration when
+the user clicks on a UV track in the UV plot.
+
+- All image-related texts are refreshed when the images are changed.
+
+- Added "Rescale" and "Restore" buttons to the CLEAN GUI.
+
 v 0.4b1 - OCTOBER 2015.
 
 - New integration into Tkinter.
