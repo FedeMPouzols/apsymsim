@@ -2224,7 +2224,7 @@ class UVPLOTTER(object):
 
 
   def quit(self):
-    self.FFTWin.destroy()
+    self.FFTwin.destroy()
 
 
 
@@ -2237,6 +2237,7 @@ class UVPLOTTER(object):
 
     menubar = Tk.Menu(self.FFTwin)
     menubar.add_command(label="Quit", command=self.quit)
+    self.FFTwin.config(menu=menubar)
 
     self.figUV1 = pl.figure(figsize=(8.5,7))    
 
