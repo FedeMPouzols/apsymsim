@@ -48,7 +48,7 @@ import os
 import time
 import sys
 
-__version__ = '1.1b'
+__version__ = '1.2b'
 
 
 
@@ -1967,7 +1967,8 @@ class CLEANer(object):
         fit = spfit.leastsq(lambda x: np.exp(-(dX*dX*x[0]+dY*dY*x[1]+dX*dY*x[2]))-self.parent.beam[MainLobe],[1.,1.,0.])
         Pang = 180./np.pi*(np.arctan2(fit[0][2],(fit[0][0]-fit[0][1]))/2.)
         AmB = fit[0][2]/np.sin(2.*np.pi/180.*Pang) ;  ApB = fit[0][0]+fit[0][1]
-        A = 2.355*(2./(ApB + AmB))**0.5  ;  B = 2.355*(2./(ApB - AmB))**0.5
+        A = 2.355*(2./(ApB + AmB))**0.5*self.parent.imsize/self.parent.Npix  
+        B = 2.355*(2./(ApB - AmB))**0.5*self.parent.imsize/self.parent.Npix
         if A < B:
           A, B = B, A
           Pang = Pang - 90.

@@ -1,3 +1,7 @@
+v 1.2b - JANUARY 2016.
+
+- New window showing FFTs of source image, dirty beam and dirty image, callable directly from the main window by pressing the "u" key.
+
 v 1.1.0 - DECEMBER 2015.
 
 - Added new plots in the "show FFT" button.
