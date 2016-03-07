@@ -627,7 +627,7 @@ class Interferometer(object):
 
 
 
-  def _changeWavelength(self,wave):
+  def _changeWavelength(self,wave,redoUV=False):
 
      if not self.GUIres:
        return
@@ -638,7 +638,7 @@ class Interferometer(object):
 
    #  self._plotAntennas(redo=False)
      self._setPrimaryBeam(replotFFT=True)
-     self._changeCoordinates(rescale=True)
+     self._changeCoordinates(rescale=True,redoUV=redoUV)
    #  self._plotModelFFT(redo=False) 
 
 
@@ -1780,7 +1780,6 @@ class Interferometer(object):
         self.widget['dec'].set_val(self.dec/self.deg2rad)
         self.widget['H0'].set_val(self.Hcov[0]/self.Hfac)
         self.widget['H1'].set_val(self.Hcov[1]/self.Hfac)
-        self.widget['wave'].set_val(self.wavelength*1.e6)
         self.GUIres = True
 
 
@@ -1790,6 +1789,7 @@ class Interferometer(object):
         self._plotAntennas(redo=True,rescale=True)
         self._plotModel(redo=True)
         self._changeCoordinates(redoUV=True)
+        self.widget['wave'].set_val(self.wavelength*1.e6)
 
         pl.draw()
         self.canvas.draw()
