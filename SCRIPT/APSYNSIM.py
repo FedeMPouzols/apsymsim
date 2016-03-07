@@ -48,7 +48,7 @@ import os
 import time
 import sys
 
-__version__ = '1.3-b'
+__version__ = '1.3'
 
 
 
@@ -193,7 +193,7 @@ class Interferometer(object):
   #    self.tks = Tk.Tk()
   #  else:
     self.tks = tkroot
-
+    self.tks.protocol("WM_DELETE_WINDOW", self.quit)
     self.Hfac = np.pi/180.*15.
     self.deg2rad = np.pi/180.
     self.curzoom = [0,0,0,0]
@@ -206,7 +206,10 @@ class Interferometer(object):
     self.W2W1 = 1.0  # Relative weighting for subarrays.
     self.currcmap = cm.jet
 
-    self.antLock = False
+    self.GUIres = True # Make some parts of the GUI respond to events
+    self.antLock = False # Lock antenna-update events
+
+    self.myCLEAN = None  # CLEANer instance (when initialized)
 
 # Default of defaults!
     nH = 200
@@ -371,6 +374,7 @@ class Interferometer(object):
     self.wax['quit']=pl.axes([0.155,0.02,0.08,0.05])
     self.wax['loadmod']=pl.axes([0.24,0.08,0.08,0.05])
     self.wax['gammacorr']=pl.axes([0.46,0.08,0.13,0.02],axisbg='white')
+    self.wax['diameter']=pl.axes([0.825,0.08,0.10,0.02],axisbg='white')
     self.wax['subarrwgt']=pl.axes([0.15,0.58,0.12,0.02],axisbg='white')
     self.widget['robust'] = Slider(self.wax['robust'],r'Robust',-2.,2.,valinit=0.0)
     self.widget['lat'] = Slider(self.wax['lat'],r'Lat (deg)',-90.,90.,valinit=self.lat/self.deg2rad)
@@ -389,9 +393,11 @@ class Interferometer(object):
     self.widget['gammacorr'].label.set_color('white')
     self.widget['gammacorr'].valtext.set_color('white')
 
+    self.widget['diameter'] = Slider(self.wax['diameter'],'Dish size (m)',0,100.,valinit=0.0,color='red')
+    self.widget['diameter'].label.set_color('white')
+    self.widget['diameter'].valtext.set_color('white')
+
     self.widget['subarrwgt'] = Slider(self.wax['subarrwgt'],'log(W1/W2)',-4,4,valinit=0,color='red')
- #   self.widget['subarrwgt'].label.set_color('white')
- #   self.widget['subarrwgt'].valtext.set_color('white')
 
     self.widget['robust'].on_changed(self._onRobust)
     self.widget['lat'].on_changed(self._onKeyLat)
@@ -406,9 +412,9 @@ class Interferometer(object):
     self.widget['loadmod'].on_clicked(self.loadModel)
     self.widget['gammacorr'].on_changed(self._gammacorr)
     self.widget['quit'].on_clicked(self.quit)
-    self.widget['reduce'].on_clicked(self.reduce)
+    self.widget['reduce'].on_clicked(self._reduce)
     self.widget['subarrwgt'].on_changed(self._subarrwgt)
-
+    self.widget['diameter'].on_changed(self._setDiameter)
 
 
     self._prepareBeam()
@@ -428,7 +434,14 @@ class Interferometer(object):
 
 
 
-  def reduce(self,event):
+  def _setDiameter(self,diam):
+
+    self.Diameters[0] = diam
+    if self.GUIres:
+      self._setPrimaryBeam(replotFFT=True)
+      self._changeCoordinates(rescale=True)
+
+  def _reduce(self,event):
 
     if self.tks is not None:
       self.myCLEAN = CLEANer(self)
@@ -615,6 +628,9 @@ class Interferometer(object):
 
 
   def _changeWavelength(self,wave):
+
+     if not self.GUIres:
+       return
 
      self.wavelength = wave*1.e-6
      fmtB1 = r'$\lambda = $ %4.1fmm  '%(self.wavelength*1.e6)
@@ -867,7 +883,6 @@ class Interferometer(object):
        self.Gsampling[self.pixpos[nb][3],self.pixpos[nb][0]] -= np.conjugate(self.Gains[nb,goodpix])
 
      self.pixpos[nb] = [np.copy(pU),np.copy(pV),np.copy(mU),np.copy(mV)]
-  #   print np.shape(pU)
      self.totsampling[pV,mU] += 1.0
      self.totsampling[mV,pU] += 1.0
      self.Gsampling[pV,mU] += self.Gains[nb,goodpix]
@@ -1011,7 +1026,7 @@ class Interferometer(object):
 
     if self.Diameters[0]>0.0:
       PB = 2.*(1220.*180./np.pi*3600.*self.wavelength/self.Diameters[0]/2.3548)**2.  # 2*sigma^2
-      print PB, np.max(self.distmat),self.wavelength
+    #  print PB, np.max(self.distmat),self.wavelength
       beamImg = np.exp(self.distmat/PB)
       self.modelim[0][:] = self.modelimTrue*beamImg
     else:
@@ -1280,12 +1295,9 @@ class Interferometer(object):
      Phas, Amp = np.angle(Flux,deg=True), np.abs(Flux)
      newtext = self.fmtVis%(Amp,Phas)
      self.visText.set_text(newtext)
-  #   print Phas, Amp
-  #   print 'hi', (self.UVPlotPlot+self.UVPlotPlot2+[self.UVPlotFFTPlot]).index(event.artist)
 
      if event.artist in self.UVPlotPlot:
        onBase = True
-  #     print 'hihi'
        idata = np.unravel_index(event.ind,self.ravelDims)
        if event.artist == self.UVPlotPlot[0]:
           n1,n2 = self.antnum[idata[0][0]]
@@ -1300,7 +1312,6 @@ class Interferometer(object):
 
      elif self.Nant2 > 1 and event.artist in self.UVPlotPlot2:
        onBase = True
-  #     print 'hihihi'
        idata = np.unravel_index(event.ind,self.ravelDims2)
        if event.artist == self.UVPlotPlot2[0]:
           n1,n2 = self.antnum2[idata[0][0]]
@@ -1324,10 +1335,8 @@ class Interferometer(object):
 
      RA = event.mouseevent.xdata
      Dec = event.mouseevent.ydata
-   #  print RA, Dec
      yi = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.Npix)
      xi = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.Npix)
-   #  print xi, yi
      Flux = self.beam[xi,yi]
      self.beamText.set_text(self.fmtB%(Flux,RA,Dec))
      pl.draw()
@@ -1357,12 +1366,13 @@ class Interferometer(object):
 
 
    elif event.mouseevent.inaxes == self.antPlot:
+
     if event.artist is self.antPlotPlot:
       self.pickSub = 0
     elif self.Nant2 > 1 and event.artist is self.antPlotPlot2:
       self.pickSub = 1
 
-   else:
+#   else:
     if event.mouseevent.button==1 and not self.pickAnt:
      self.antidx = event.ind
      if len(self.antidx) > 1:
@@ -1384,15 +1394,15 @@ class Interferometer(object):
       if self.pickSub==0:
         self.antPos[self.antidx] = [event.xdata,event.ydata]
         self.antText.set_text(self.fmtA%(self.Nant+self.Nant2) + self.fmtA2%(self.antidx+1) + self.fmtA3%tuple([1000*a for a in self.antPos[self.antidx]]))
-        self._setBaselines(antidx=self.antidx)
+        self._setBaselines(-1) #antidx=self.antidx)
         self._plotAntennas(redo=False)
-        self._setBeam(antidx=self.antidx)
+        self._setBeam(-1) #antidx=self.antidx)
       else:
         self.antPos2[self.antidx] = [event.xdata,event.ydata]
         self.antText.set_text(self.fmtA%(self.Nant+self.Nant2) + self.fmtA2%(self.antidx+self.Nant+1) + self.fmtA3%tuple([1000*a for a in self.antPos2[self.antidx]]))
-        self._setBaselines(antidx=self.antidx+self.Nant)
+        self._setBaselines(-1) #antidx=self.antidx+self.Nant)
         self._plotAntennas(redo=False)
-        self._setBeam(antidx=self.antidx+self.Nant)
+        self._setBeam(-1) #antidx=self.antidx+self.Nant)
 
       self._plotBeam(redo=False)
       self._plotDirty(redo=False)
@@ -1445,6 +1455,10 @@ class Interferometer(object):
 
 
   def _onKeyLat(self,newlat):
+
+   if not self.GUIres:
+     return
+
    newlat *= self.deg2rad
    if not self.lock:
     self.lock = True
@@ -1468,6 +1482,10 @@ class Interferometer(object):
     self.canvas.draw()
 
   def _onKeyDec(self,newdec):
+
+   if not self.GUIres:
+     return
+
    newdec *= self.deg2rad
    if not self.lock:
     self.lock=True
@@ -1482,6 +1500,10 @@ class Interferometer(object):
 
 
   def _onKeyH0(self,newH0):
+
+   if not self.GUIres:
+     return
+
    newH0 *= self.Hfac
    if not self.lock:
     self.lock = True
@@ -1499,6 +1521,10 @@ class Interferometer(object):
 
 
   def _onKeyH1(self,newH1):
+
+   if not self.GUIres:
+     return
+
    newH1 *= self.Hfac
    if not self.lock:
     self.lock = True
@@ -1559,7 +1585,6 @@ class Interferometer(object):
 
   def _onKeyPress(self,event):
 
-
     if event.key == 'u' or event.key == 'U':
 
       if self.tks is not None:
@@ -1574,7 +1599,6 @@ class Interferometer(object):
       else:
          self.currcmap = cm.jet
 
-
       self._plotBeam(redo=True)
       self._plotModel(redo=True)
       self._plotDirty(redo=True)
@@ -1582,6 +1606,11 @@ class Interferometer(object):
 
       pl.draw()
       self.canvas.draw()
+
+      if self.myCLEAN:
+        self.myCLEAN.ResidPlotPlot.set_cmap(self.currcmap)
+        self.myCLEAN.CLEANPlotPlot.set_cmap(self.currcmap)
+        self.myCLEAN.canvas1.draw()
 
 
     if event.key == 'Z':
@@ -1596,6 +1625,7 @@ class Interferometer(object):
 
 
   def _onPress(self,event):
+
     if event.inaxes == self.spherePlot:
       self._onSphere = True
 
@@ -1604,12 +1634,17 @@ class Interferometer(object):
        event.dblclick = False
 
     if event.dblclick:
+
+      mpl = [self.modelPlot, self.dirtyPlot]
+      if self.myCLEAN:
+        mpl += [self.myCLEAN.ResidPlot, self.myCLEAN.CLEANPlot]
+
 # ZOOM IN:
       if event.inaxes == self.beamPlot:
          toZoom = [self.beamPlot]
          cz = 0; inv = True; inv2 = False; scal = 1.0
-      elif event.inaxes in [self.modelPlot, self.dirtyPlot]:
-         toZoom = [self.modelPlot, self.dirtyPlot]
+      elif event.inaxes in mpl: #[self.modelPlot, self.dirtyPlot]:
+         toZoom = mpl #[self.modelPlot, self.dirtyPlot]
          cz = 1; inv = True; inv2 = False; scal = 1.0
       elif event.inaxes == self.UVPlot:
          toZoom = [self.UVPlot]
@@ -1691,6 +1726,10 @@ class Interferometer(object):
        pl.draw()
        self.canvas.draw()
 
+       if self.myCLEAN:
+         self.myCLEAN.canvas1.draw()
+
+
   def saveArray(self,array):
 
     fname = tkFileDialog.asksaveasfilename(defaultextension='.array',title='Save current array...')
@@ -1700,6 +1739,10 @@ class Interferometer(object):
     print >> iff,'DECLINATION % 3.1f'%(self.dec/self.deg2rad)
     toprint = tuple([l/self.Hfac for l in self.Hcov])
     print >> iff,'HOUR_ANGLE % 3.1f  % 3.1f'%toprint
+
+    if self.Diameters[0] != 0.0 or self.Diameters[1] != 0.0:
+      print >> iff,'DIAMETER % 3.1f  % 3.1f'%tuple(self.Diameters)
+
     for ant in self.antPos:
       toprint = tuple([p*1.e3 for p in ant])
       print >> iff,'ANTENNA  % .3e   % .3e'%toprint
@@ -1728,23 +1771,26 @@ class Interferometer(object):
       goodread = self.readAntennas(str(antenna_file))
 
       if goodread:
-        self._prepareBaselines()
-        self._setBaselines()
-        self._plotAntennas(redo=True,rescale=True)
-        self._changeCoordinates(redoUV=True)
-        self._plotModel(redo=True)
-        self._plotModelFFT(redo=True) 
+
+        self.GUIres = False
         newtext = self.fmtA%self.Nant 
         self.antText.set_text(newtext)
+        self.widget['diameter'].set_val(self.Diameters[0])
         self.widget['lat'].set_val(self.lat/self.deg2rad)
         self.widget['dec'].set_val(self.dec/self.deg2rad)
         self.widget['H0'].set_val(self.Hcov[0]/self.Hfac)
         self.widget['H1'].set_val(self.Hcov[1]/self.Hfac)
         self.widget['wave'].set_val(self.wavelength*1.e6)
-  #      self._plotAntennas(redo=True,rescale=True)
-      #  self._setBaselines()
-        self._plotBeam(redo=True)
-        self._plotDirty(redo=True)
+        self.GUIres = True
+
+
+        self._prepareBaselines()
+        self._setBaselines()
+        self._plotModelFFT(redo=True) 
+        self._plotAntennas(redo=True,rescale=True)
+        self._plotModel(redo=True)
+        self._changeCoordinates(redoUV=True)
+
         pl.draw()
         self.canvas.draw()
 
@@ -1758,7 +1804,6 @@ class Interferometer(object):
 
     if len(model_file)>0:
       goodread = self.readModels(str(model_file))
-    #  print goodread
       if goodread:
         self._prepareModel()
         self._plotModel(redo=True)
@@ -1795,6 +1840,7 @@ class CLEANer(object):
 
   def quit(self):
 
+    self.parent.myCLEAN = None
     self.me.destroy()
     self.residuals[:] = 0.0
     self.cleanmod[:] = 0.0
@@ -1812,7 +1858,7 @@ class CLEANer(object):
     menubar.add_command(label="Quit", command=self.quit)
 
     self.me.config(menu=menubar)
-
+    self.me.protocol("WM_DELETE_WINDOW", self.quit)
     self.Np4 = self.parent.Npix/4
 
     self.figCL1 = pl.figure(figsize=(12,6))    
@@ -1957,7 +2003,7 @@ class CLEANer(object):
     self.canvas1.mpl_connect('motion_notify_event', self._doMask)
     self.canvas1.mpl_connect('button_release_event',self._onRelease)
     self.canvas1.mpl_connect('button_press_event',self._onPress)
-
+    self.canvas1.mpl_connect('key_press_event', self.parent._onKeyPress)
 
  #   toolbar_frame = Tk.Frame(self.me)
  #   toolbar = NavigationToolbar2TkAgg(self.canvas1, toolbar_frame)
@@ -2004,6 +2050,7 @@ class CLEANer(object):
     self.ResidPlotPlot.norm.vmin = np.min(rsarr)
     self.ResidPlotPlot.norm.vmax = np.max(rsarr)
     self.ResidPlotPlot.set_array(rsarr)
+
     del clarr, rsarr
 
   # self.CLEANPlot.autoscale() #.norm.vmin = np.min(clarr)
@@ -2047,7 +2094,6 @@ class CLEANer(object):
 
      RA = event.mouseevent.xdata
      Dec = event.mouseevent.ydata
-  #   print RA, Dec
      yi = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.parent.Npix)
      xi = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.parent.Npix)
      Flux = self.residuals[xi,yi]
@@ -2069,7 +2115,7 @@ class CLEANer(object):
 
 
   def _onPress(self,event):
-
+    self.canvas1._tkcanvas.focus_set()
     if event.inaxes == self.ResidPlot:
       self.pressed = int(event.button)
       RA = event.xdata
@@ -2094,26 +2140,21 @@ class CLEANer(object):
       if self.pressed==1:
         self.mask[xi:xf,yi:yf] = 1.0
         self.bmask[xi:xf,yi:yf] = True
-
-   #     print 'DONE'
       else:
         self.mask[xi:xf,yi:yf] = 0.0
         self.bmask[xi:xf,yi:yf] = False
-
-   #     print 'DONE2'
 
       for coll in self.MaskPlot.collections:
          self.ResidPlot.collections.remove(coll)
 
       self.MaskPlot = self.ResidPlot.contour(np.linspace(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Npix/2),np.linspace(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Npix/2),self.mask[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4],levels=[0.5])
 
-      self.ResidPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
-      self.ResidPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
-
+   #   self.ResidPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
+   #   self.ResidPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
+      self.CLEANPlot.set_xlim((self.parent.curzoom[1][0],self.parent.curzoom[1][1]))
+      self.CLEANPlot.set_ylim((self.parent.curzoom[1][2],self.parent.curzoom[1][3]))
       self.canvas1.draw()
-     # self.canvas2.draw()
 
- #     print 'WAS RELEASED ',self.moved,np.sum(self.mask),self.xy0,x1,y1
       self.Box.set_data([0.,0.,0.,0.,0.],[0.,0.,0.,0.,0.])
 
 
@@ -2194,8 +2235,8 @@ class CLEANer(object):
     self.MaskPlot = self.ResidPlot.contour(np.linspace(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Npix/2),np.linspace(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Npix/2),self.mask[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4],levels=[0.5])
   #  pl.setp(self.MaskPlot, extent=(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
 
-    self.ResidPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
-    self.ResidPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
+  #  self.ResidPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
+  #  self.ResidPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
 
 
     self.residuals = np.copy(self.parent.dirtymap)
@@ -2213,8 +2254,10 @@ class CLEANer(object):
     self.CLEANPlot.set_title('CLEAN (0 ITER)')
     self.CLEANPlotPlot.set_array(self.cleanmod[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4])
 
-    self.CLEANPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
-    self.CLEANPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
+#    self.CLEANPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
+#    self.CLEANPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
+    self.CLEANPlot.set_xlim((self.parent.curzoom[1][0],self.parent.curzoom[1][1]))
+    self.CLEANPlot.set_ylim((self.parent.curzoom[1][2],self.parent.curzoom[1][3]))
 
     self.totiter = 0
 
@@ -2228,8 +2271,8 @@ class CLEANer(object):
       self.cleanBeam[self.parent.Npix/2,self.parent.Npix/2] = 1.0
     else:
       dX = MainLobe[0]-self.parent.Npix/2 ; dY = MainLobe[1]-self.parent.Npix/2
-      if True:
-    #  try::
+    #  if True:
+      try:
         fit = spfit.leastsq(lambda x: np.exp(-(dX*dX*x[0]+dY*dY*x[1]+dX*dY*x[2]))-self.parent.beam[MainLobe],[1.,1.,0.])
         Pang = 180./np.pi*(np.arctan2(fit[0][2],(fit[0][0]-fit[0][1]))/2.)
         AmB = fit[0][2]/np.sin(2.*np.pi/180.*Pang) ;  ApB = fit[0][0]+fit[0][1]
@@ -2249,18 +2292,15 @@ class CLEANer(object):
           self.Beamtxt = '%.1f x %.1f mas (PA = %.1f deg.)'%(1000.*A,1000.*B,Pang)
 
         self.CLEANText.set_text(self.parent.fmtD%(0.,0.,0.)+'\n'+self.Beamtxt)
-        print 'BEAM FIT: ',fit[0], A, B, Pang
-    #    fit = spfit.minimize(lambda x: np.sum(np.power(np.exp(-(dX*dX*x[0]+dY*dY*x[1]+dX*dY*x[2]))-self.parent.beam[MainLobe],2.)),[1.,1.,0.],method='TNC',bounds=((0.,None),(0.,None),(None,None)))
-     #   print 'BEAM FIT: ',fit.x
+    #    print 'BEAM FIT: ',fit[0], A, B, Pang
         ddX = np.outer(np.ones(self.parent.Npix),np.arange(-self.parent.Npix/2,self.parent.Npix/2).astype(np.float64))
         ddY = np.outer(np.arange(-self.parent.Npix/2,self.parent.Npix/2).astype(np.float64),np.ones(self.parent.Npix))
 
         self.cleanBeam[:] = np.exp(-(ddY*ddY*fit[0][0]+ddX*ddX*fit[0][1]+ddY*ddX*fit[0][2]))
-      #  self.cleanBeam[:] = np.exp(-(ddY*ddY*fit.x[0]+ddX*ddX*fit.x[1]+ddY*ddX*fit.x[2]))
 
         del ddX, ddY
-      else:
-    #  except:
+   #   else:
+      except:
         showinfo('ERROR!', 'Problems fitting the PSF main lobe!\n CLEAN model will not be restored')
         self.cleanBeam[:] = 0.0
         self.cleanBeam[self.parent.Npix/2,self.parent.Npix/2] = 1.0
@@ -2273,6 +2313,8 @@ class CLEANer(object):
 
     self.totalClean = 0.0
 
+
+  #  self.canvas1.mpl_connect('key_press_event', self.parent._onKeyPress)
     self.canvas1.draw()
   #  self.canvas2.draw()
 
@@ -2430,9 +2472,6 @@ class CLEANer(object):
     pl.setp(self.CS1Plot, extent=(self.Xaxmax/2.,-self.Xaxmax/2.,-self.Xaxmax/2.,self.Xaxmax/2.))
 
 
- #   self.CS1Plot = self.CS1.imshow(Toplot,vmin=0.0,vmax=np.max(Toplot),cmap=self.parent.currcmap,picker=True,interpolation='nearest')
- #   pl.setp(self.CS1Plot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
-
     self.CS1.set_xlabel('RA offset (as)')
     self.CS1.set_ylabel('Dec offset (as)')
 
@@ -2457,7 +2496,6 @@ class CLEANer(object):
 
      RA = event.mouseevent.xdata
      Dec = event.mouseevent.ydata
-  #   print RA, Dec
      yi = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.parent.Npix)
      xi = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.parent.Npix)
      Flux = self.CSImage[xi,yi]
