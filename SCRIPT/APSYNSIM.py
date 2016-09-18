@@ -228,7 +228,7 @@ class Interferometer(object):
     nH = 200
     Npix = 512   # Image pixel size. Must be a power of 2
     DefaultMod = 'Nebula.model'
-    DefaultArray = 'Golay_12.array'
+    DefaultArray = 'Long_Golay_12.array'
 
 # Overwrite defaults from config file:
     d1 = os.path.dirname(os.path.realpath(__file__))
@@ -366,7 +366,7 @@ class Interferometer(object):
     self.fmtA = 'N = %i'
     self.fmtA2 = '  Picked Ant. #%i' 
     self.fmtA3 = '\n%6.1fm | %6.1fm'
-    fmtB1 = r'$\lambda = $ %4.1fmm  '%(self.wavelength*1.e6)
+    fmtB1 = r'$\lambda = $ %4.1fmm  '%(self.wavelength[2]*1.e6)
     self.fmtB = fmtB1 + "\n" + r'% 4.2f Jy/beam' + "\n" + r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f '
     self.fmtD = r'% .2e Jy/beam' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f '
     self.fmtM = r'%.2e Jy/pixel' "\n"  r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f'
@@ -394,7 +394,7 @@ class Interferometer(object):
     self.widget['dec'] = Slider(self.wax['dec'],r'Dec (deg)',-90.,90.,valinit=self.dec/self.deg2rad)
     self.widget['H0'] = Slider(self.wax['H0'],r'H$_{0}$ (h)',-12.,12.,valinit=self.Hcov[0]/self.Hfac)
     self.widget['H1'] = Slider(self.wax['H1'],r'H$_{1}$ (h)',-12.,12.,valinit=self.Hcov[1]/self.Hfac)
-    self.widget['wave'] = Slider(self.wax['wave'],r'$\lambda$ (mm)',self.wavelength*1.e6/10.,10.*self.wavelength*1.e6,valinit=self.wavelength*1.e6)
+    self.widget['wave'] = Slider(self.wax['wave'],r'$\lambda$ (mm)',self.wavelength[0]*1.e6,self.wavelength[1]*1.e6,valinit=self.wavelength[2]*1.e6)
     self.widget['add'] = Button(self.wax['add'],r'+ Antenna')
     self.widget['rem'] = Button(self.wax['rem'],r'$-$ Antenna')
     self.widget['reduce'] = Button(self.wax['reduce'],r'Reduce data')
@@ -471,6 +471,7 @@ class Interferometer(object):
     self.trdec = [np.sin(self.dec), np.cos(self.dec)]
     self.Xmax = 4.0
     self.Diameters = [0.,0.]
+    self.wavelength = [3.e-6, 21.e-5,6.e-5]  # in km.
 
     if len(antenna_file)==0:
       self.Nant = 7
@@ -497,7 +498,11 @@ class Interferometer(object):
           l = l[:comm]     
         it = l.split()
         if len(it)>0:
-          if it[0]=='ANTENNA':   
+
+          if it[0]=='WAVELENGTH':  
+            self.wavelength = [float(it[1])*1.e-3,float(it[2])*1.e-3]
+            self.wavelength.append((self.wavelength[0]+self.wavelength[1])/2.)
+          elif it[0]=='ANTENNA':   
             antPos.append(map(float,it[1:]))
             Nant += 1
             antPos[-1][0] *= 1.e-3 ; antPos[-1][1] *= 1.e-3
@@ -574,7 +579,6 @@ class Interferometer(object):
 
   def readModels(self,model_file):
 
-    self.wavelength = 1.e-6  # in km.
     self.imsize = 4. 
     self.imfiles = []
 
@@ -608,8 +612,8 @@ class Interferometer(object):
               models[-1][4] = np.abs(models[-1][4])
               Xmax = np.max([np.abs(models[-1][1])+models[-1][4],
                  np.abs(models[-1][2])+models[-1][4],Xmax])
-          elif it[0] == 'WAVELENGTH':
-            wavelength = float(it[1])*1.e-3
+#          elif it[0] == 'WAVELENGTH':
+#            wavelength = float(it[1])*1.e-3
           elif it[0] == 'IMSIZE':
             imsize = 2.*float(it[1])
             fixsize = True
@@ -620,7 +624,7 @@ class Interferometer(object):
          self.showError("\n\nThere should be at least 1 model component!\n\n")
 
       self.models=models
-      self.wavelength=wavelength
+#      self.wavelength=wavelength
       self.imsize=imsize
       self.imfiles = imfiles
 
@@ -645,8 +649,8 @@ class Interferometer(object):
      if not self.GUIres:
        return
 
-     self.wavelength = wave*1.e-6
-     fmtB1 = r'$\lambda = $ %4.1fmm  '%(self.wavelength*1.e6)
+     self.wavelength[2] = wave*1.e-6
+     fmtB1 = r'$\lambda = $ %4.1fmm  '%(self.wavelength[2]*1.e6)
      self.fmtB = fmtB1 + "\n" r'% 4.2f Jy/beam' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f '
 
    #  self._plotAntennas(redo=False)
@@ -850,9 +854,9 @@ class Interferometer(object):
 
    for currBas in bas2change:
      n1,n2 = self.antnum[currBas]
-     self.B[currBas,0] = -(self.antPos[n2][1]-self.antPos[n1][1])*self.trlat[0]/self.wavelength
-     self.B[currBas,1] = (self.antPos[n2][0]-self.antPos[n1][0])/self.wavelength
-     self.B[currBas,2] = (self.antPos[n2][1]-self.antPos[n1][1])*self.trlat[1]/self.wavelength
+     self.B[currBas,0] = -(self.antPos[n2][1]-self.antPos[n1][1])*self.trlat[0]/self.wavelength[2]
+     self.B[currBas,1] = (self.antPos[n2][0]-self.antPos[n1][0])/self.wavelength[2]
+     self.B[currBas,2] = (self.antPos[n2][1]-self.antPos[n1][1])*self.trlat[1]/self.wavelength[2]
      self.u[currBas,:] = -(self.B[currBas,0]*self.H[0] + self.B[currBas,1]*self.H[1])
      self.v[currBas,:] = -self.B[currBas,0]*self.trdec[0]*self.H[1]+self.B[currBas,1]*self.trdec[0]*self.H[0]+self.trdec[1]*self.B[currBas,2]
 
@@ -868,9 +872,9 @@ class Interferometer(object):
 
     for currBas in bas2change:
      n1,n2 = self.antnum2[currBas]
-     self.B2[currBas,0] = -(self.antPos2[n2][1]-self.antPos2[n1][1])*self.trlat[0]/self.wavelength
-     self.B2[currBas,1] = (self.antPos2[n2][0]-self.antPos2[n1][0])/self.wavelength
-     self.B2[currBas,2] = (self.antPos2[n2][1]-self.antPos2[n1][1])*self.trlat[1]/self.wavelength
+     self.B2[currBas,0] = -(self.antPos2[n2][1]-self.antPos2[n1][1])*self.trlat[0]/self.wavelength[2]
+     self.B2[currBas,1] = (self.antPos2[n2][0]-self.antPos2[n1][0])/self.wavelength[2]
+     self.B2[currBas,2] = (self.antPos2[n2][1]-self.antPos2[n1][1])*self.trlat[1]/self.wavelength[2]
      self.u2[currBas,:] = -(self.B2[currBas,0]*self.H[0] + self.B2[currBas,1]*self.H[1])
      self.v2[currBas,:] = -self.B2[currBas,0]*self.trdec[0]*self.H[1]+self.B2[currBas,1]*self.trdec[0]*self.H[0]+self.trdec[1]*self.B2[currBas,2]
 
@@ -1062,7 +1066,7 @@ class Interferometer(object):
   def _setPrimaryBeam(self,replotFFT=False):
 
     if self.Diameters[0]>0.0:
-      PB = 2.*(1220.*180./np.pi*3600.*self.wavelength/self.Diameters[0]/2.3548)**2.  # 2*sigma^2
+      PB = 2.*(1220.*180./np.pi*3600.*self.wavelength[2]/self.Diameters[0]/2.3548)**2.  # 2*sigma^2
     #  print PB, np.max(self.distmat),self.wavelength
       beamImg = np.exp(self.distmat/PB)
       self.modelim[0][:] = self.modelimTrue*beamImg
@@ -1071,7 +1075,7 @@ class Interferometer(object):
 
     if self.Nant2 > 1:
       if self.Diameters[1]>0.0:
-        PB = 2.*(1220.*180./np.pi*3600.*self.wavelength/self.Diameters[1]/2.3548)**2.  # 2*sigma^2
+        PB = 2.*(1220.*180./np.pi*3600.*self.wavelength[2]/self.Diameters[1]/2.3548)**2.  # 2*sigma^2
         beamImg = np.exp(self.distmat/PB)
         self.modelim[1][:] = self.modelimTrue*beamImg
       else:
@@ -1174,7 +1178,7 @@ class Interferometer(object):
 
   def _plotAntennas(self,redo=True,rescale=False):
 
-   mw = 2.*self.Xmax/self.wavelength/self.lfac
+   mw = 2.*self.Xmax/self.wavelength[2]/self.lfac
    if mw < 0.1 and self.lfac == 1.e6:
       self.lfac = 1.e3
       self.ulab = r'U (k$\lambda$)'
@@ -1215,8 +1219,8 @@ class Interferometer(object):
       toplotu = self.u2.flatten()/self.lfac ;  toplotv = self.v2.flatten()/self.lfac ; 
       self.UVPlotPlot2.append(self.UVPlot.plot(toplotu, toplotv,'.r',markersize=1,picker=2)[0])
       self.UVPlotPlot2.append(self.UVPlot.plot(-toplotu,-toplotv,'.r',markersize=1,picker=2)[0])
-    self.UVPlot.set_xlim((2.*self.Xmax/self.wavelength/self.lfac,-2.*self.Xmax/self.wavelength/self.lfac))
-    self.UVPlot.set_ylim((2.*self.Xmax/self.wavelength/self.lfac,-2.*self.Xmax/self.wavelength/self.lfac))
+    self.UVPlot.set_xlim((2.*self.Xmax/self.wavelength[2]/self.lfac,-2.*self.Xmax/self.wavelength[2]/self.lfac))
+    self.UVPlot.set_ylim((2.*self.Xmax/self.wavelength[2]/self.lfac,-2.*self.Xmax/self.wavelength[2]/self.lfac))
     self.curzoom[2] = (2.*self.Xmax/self.lfac,-2.*self.Xmax/self.lfac,2.*self.Xmax/self.lfac,-2.*self.Xmax/self.lfac)
     self.latText = self.UVPlot.text(0.05,0.87,self.fmtH%(self.lat/self.deg2rad,self.dec/self.deg2rad,self.Hcov[0]/self.Hfac,self.Hcov[1]/self.Hfac),transform=self.UVPlot.transAxes)
     self.latText.set_color('orange')
@@ -1248,8 +1252,8 @@ class Interferometer(object):
     if rescale:
       self.antPlot.set_xlim((-self.Xmax,self.Xmax))
       self.antPlot.set_ylim((-self.Xmax,self.Xmax))
-      self.UVPlot.set_xlim((2.*self.Xmax/self.wavelength/self.lfac,-2.*self.Xmax/self.wavelength/self.lfac))
-      self.UVPlot.set_ylim((2.*self.Xmax/self.wavelength/self.lfac,-2.*self.Xmax/self.wavelength/self.lfac))
+      self.UVPlot.set_xlim((2.*self.Xmax/self.wavelength[2]/self.lfac,-2.*self.Xmax/self.wavelength[2]/self.lfac))
+      self.UVPlot.set_ylim((2.*self.Xmax/self.wavelength[2]/self.lfac,-2.*self.Xmax/self.wavelength[2]/self.lfac))
       self.curzoom[2] = (2.*self.Xmax/self.lfac,-2.*self.Xmax/self.lfac,2.*self.Xmax/self.lfac,-2.*self.Xmax/self.lfac)
       self.curzoom[3] = (-self.Xmax,self.Xmax,-self.Xmax,self.Xmax)
 
@@ -1688,7 +1692,7 @@ class Interferometer(object):
          cz = 1; inv = True; inv2 = False; scal = 1.0
       elif event.inaxes == self.UVPlot:
          toZoom = [self.UVPlot]
-         cz = 2; inv = True; inv2 = True; scal = self.wavelength
+         cz = 2; inv = True; inv2 = True; scal = self.wavelength[2]
       elif event.inaxes == self.antPlot:
          toZoom = [self.antPlot]
          cz = 3; inv = False; inv2 = False; scal = 1.0
@@ -1820,6 +1824,10 @@ class Interferometer(object):
         self.widget['dec'].set_val(self.dec/self.deg2rad)
         self.widget['H0'].set_val(self.Hcov[0]/self.Hfac)
         self.widget['H1'].set_val(self.Hcov[1]/self.Hfac)
+        self.wax['wave'].cla()
+        self.widget['wave'] = Slider(self.wax['wave'],r'$\lambda$ (mm)',self.wavelength[0]*1.e6,self.wavelength[1]*1.e6,valinit=self.wavelength[2]*1.e6)
+        self.widget['wave'].on_changed(self._changeWavelength)
+        self.widget['wave'].set_val(self.wavelength[2]*1.e6)
         self.GUIres = True
 
 
@@ -1829,7 +1837,7 @@ class Interferometer(object):
         self._plotAntennas(redo=True,rescale=True)
         self._plotModel(redo=True)
         self._changeCoordinates(redoUV=True)
-        self.widget['wave'].set_val(self.wavelength*1.e6)
+        self.widget['wave'].set_val(self.wavelength[2]*1.e6)
 
         pl.draw()
         self.canvas.draw()
@@ -1847,14 +1855,10 @@ class Interferometer(object):
       if goodread:
         self._prepareModel()
         self._plotModel(redo=True)
-        self.widget['wave'].set_val(self.wavelength*1.e6)
         self._setBaselines()
         self._setBeam()
         self._changeCoordinates()
         self._plotModelFFT(redo=True) 
-        self.wax['wave'].cla()
-        self.widget['wave'] = Slider(self.wax['wave'],r'$\lambda$ (mm)',self.wavelength*1.e6/10.,10.*self.wavelength*1.e6,valinit=self.wavelength*1.e6)
-        self.widget['wave'].on_changed(self._changeWavelength)
         self._plotBeam(redo=True)
         self._plotDirty(redo=True)
         pl.draw()

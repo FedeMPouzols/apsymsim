@@ -1,7 +1,11 @@
 v 1.4 - SEPT 2016.
 
 - Random noise can be added to the visibilities.
+
+- The range of observing wavelengths is now provided in the "array" files (i.e., not in the models).
+
 - Corrected bug related to a limitation in numpy. The visibilities of the same baseline that were too close in UV space (sharing pixels) were not added.
+
 
 v 1.3 - MARCH 2016.
 
