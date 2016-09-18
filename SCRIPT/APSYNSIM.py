@@ -48,7 +48,7 @@ import os
 import time
 import sys
 
-__version__ = '1.3'
+__version__ = '1.4-b'
 
 
 
@@ -127,11 +127,15 @@ is the CLEAN threshold (in Jy per beam). Setting it to negative values will
 allow CLEANing negative components.
 
 
-Pressing RESET will undo all CLEANING. 
+Pressing RELOAD will undo all CLEANING and update the images from the 
+main window. That is, if you change anything in the main program window 
+(e.g., observing wavelength, antenna positions, etc.), pressing RELOAD 
+will apply such changes to the images in the CLEAN interface.
 
-You also need to press RESET to refresh the images for CLEANing, if you 
-change anything in the main program window (e.g., observing wavelength, 
-antenna positions, etc.).
+TIP: You can load more than one CLEAN GUI, change anything in the main 
+window and press "RELOAD" just in one of the GUIs. This way, you can 
+compare directly how the changes you made in the main window affect the 
+CLEANing!
 
 Pressing "+/- Resid" will add (or remove) the residuals from the CLEANed 
 image.  By default, the residuals are NOT added (i.e., only the restored
@@ -147,6 +151,15 @@ Pressing "True source (conv.)" will show the true source structure
 convolved with the CLEAN beam. This is to compare the fidelity of the 
 CLEAN deconvolution algorithm, by comparing the CLEAN image to the 
 true source brightness distribution (downgraded to the CLEAN resolution).
+
+You can add random noise to your visibilities by setting a sensitivity
+(in the "Sensit." text) and pressing "Redo Noise". Any time that you 
+press this button, a new realisation of the random noise will be 
+computed. "Sensit." is the expected rms that you would get from of a 
+source-free observation, using natural weighting. Basically, the noise 
+added to each visibility is proportional to Sensit.*sqrt(Nbas*Nt), where
+Nbas is the number of baselines and Nt is the number of integration 
+times per baseline.
 
 -----------------------------
 HOW TO ADD A CORRUPTING GAIN
@@ -715,6 +728,17 @@ class Interferometer(object):
     self.canvas.draw()
 
 
+  def _setNoise(self,noise):
+    if noise == 0.0:
+      self.Noise[:] = 0.0
+    else:
+      self.Noise[:] = np.random.normal(loc=0.0,scale=noise,size=np.shape(self.Noise))+1.j*np.random.normal(loc=0.0,scale=noise,size=np.shape(self.Noise))
+    self._setBaselines()
+    self._setBeam()
+    self._plotBeam(redo=False)
+    self._plotDirty(redo=False)
+    self.canvas.draw()
+
 
   def _setGains(self,An1,An2,H0,H1,G):
 
@@ -742,9 +766,11 @@ class Interferometer(object):
     self.beam = np.zeros((self.Npix,self.Npix),dtype=np.float32)
     self.totsampling = np.zeros((self.Npix,self.Npix),dtype=np.float32)
     self.dirtymap = np.zeros((self.Npix,self.Npix),dtype=np.float32)
+    self.noisemap = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
     self.robustsamp = np.zeros((self.Npix,self.Npix),dtype=np.float32)
     self.Gsampling = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
     self.Grobustsamp = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
+    self.GrobustNoise = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
 
     self.beam2 = np.zeros((self.Npix,self.Npix),dtype=np.float32)
     self.totsampling2 = np.zeros((self.Npix,self.Npix),dtype=np.float32)
@@ -764,6 +790,7 @@ class Interferometer(object):
     self.basidx = np.zeros((self.Nant,self.Nant),dtype=np.int8)
     self.antnum = np.zeros((NBmax,2),dtype=np.int8)
     self.Gains = np.ones((self.Nbas,self.nH),dtype=np.complex64)
+    self.Noise = np.zeros((self.Nbas,self.nH),dtype=np.complex64)
     self.Horig = np.linspace(self.Hcov[0],self.Hcov[1],self.nH)
     H = self.Horig[np.newaxis,:]
     self.H = [np.sin(H),np.cos(H)]
@@ -858,6 +885,7 @@ class Interferometer(object):
      self.pixpos = [[] for nb in bas2change]
      self.totsampling[:] = 0.0
      self.Gsampling[:] = 0.0
+     self.noisemap[:] = 0.0
    elif antidx < self.Nant:
      bas2change = map(int,list(self.basnum[antidx].flatten()))
    else:
@@ -868,7 +896,7 @@ class Interferometer(object):
    for nb in bas2change:
      pixU = np.rint(self.u[nb]/self.UVpixsize).flatten().astype(np.int32)
      pixV = np.rint(self.v[nb]/self.UVpixsize).flatten().astype(np.int32)
-     goodpix = np.logical_and(np.abs(pixU)<self.Nphf,np.abs(pixV)<self.Nphf)
+     goodpix = np.where(np.logical_and(np.abs(pixU)<self.Nphf,np.abs(pixV)<self.Nphf))[0]
      pU = pixU[goodpix] + self.Nphf
      pV = pixV[goodpix] + self.Nphf
      mU = -pixU[goodpix] + self.Nphf
@@ -881,13 +909,19 @@ class Interferometer(object):
        self.totsampling[self.pixpos[nb][3],self.pixpos[nb][0]] -= 1.0
        self.Gsampling[self.pixpos[nb][1],self.pixpos[nb][2]] -= self.Gains[nb,goodpix]
        self.Gsampling[self.pixpos[nb][3],self.pixpos[nb][0]] -= np.conjugate(self.Gains[nb,goodpix])
+       self.noisemap[self.pixpos[nb][1],self.pixpos[nb][2]] -= self.Noise[nb,goodpix]*np.abs(self.Gains[nb,goodpix])
+       self.noisemap[self.pixpos[nb][3],self.pixpos[nb][0]] -= np.conjugate(self.Noise[nb,goodpix])*np.abs(self.Gains[nb,goodpix])
 
      self.pixpos[nb] = [np.copy(pU),np.copy(pV),np.copy(mU),np.copy(mV)]
-     self.totsampling[pV,mU] += 1.0
-     self.totsampling[mV,pU] += 1.0
-     self.Gsampling[pV,mU] += self.Gains[nb,goodpix]
-     self.Gsampling[mV,pU] += np.conjugate(self.Gains[nb,goodpix])
-
+     for pi,gp in enumerate(goodpix):
+       gabs = np.abs(self.Gains[nb,gp])
+       pVi = pV[pi] ; mUi = mU[pi] ; mVi = mV[pi]; pUi = pU[pi]
+       self.totsampling[pVi,mUi] += 1.0
+       self.totsampling[mVi,pUi] += 1.0
+       self.Gsampling[pVi,mUi] += self.Gains[nb,gp]
+       self.Gsampling[mVi,pUi] += np.conjugate(self.Gains[nb,gp])
+       self.noisemap[pVi,mUi] += self.Noise[nb,gp]*gabs
+       self.noisemap[mVi,pUi] += np.conjugate(self.Noise[nb,gp])*gabs
 
    self.robfac = (5.*10.**(-self.robust))**2.*(2.*self.Nbas*self.nH)/np.sum(self.totsampling**2.)
 
@@ -940,8 +974,11 @@ class Interferometer(object):
 
    self._gridUV(antidx=antidx) 
 
-   self.robustsamp[:] = self.totsampling/(1.+self.robfac*self.totsampling)
-   self.Grobustsamp[:] = self.Gsampling/(1.+self.robfac*self.totsampling)
+   denom = 1.+self.robfac*self.totsampling
+   self.robustsamp[:] = self.totsampling/denom
+   self.Grobustsamp[:] = self.Gsampling/denom
+   self.GrobustNoise[:] = self.noisemap/denom
+
    self.beam[:] = np.fft.ifftshift(np.fft.ifft2(np.fft.fftshift(self.robustsamp))).real/(1.+self.W2W1) 
  #  self.beamScale = np.max(self.beam[self.Nphf:self.Nphf+1,self.Nphf:self.Nphf+1])
 
@@ -1087,7 +1124,7 @@ class Interferometer(object):
 
     if redo:
        mymap = pl.gray()
-       self.UVPlotFFTPlot = self.UVPlot.imshow(toplot,cmap=mymap,vmin=mval-dval,vmax=Mval+dval,picker=5)
+       self.UVPlotFFTPlot = self.UVPlot.imshow(toplot,cmap=mymap,vmin=0.0,vmax=Mval+dval,picker=5)
        pl.setp(self.UVPlotFFTPlot, extent=(-self.UVmax+self.UVSh,self.UVmax+self.UVSh,-self.UVmax-self.UVSh,self.UVmax-self.UVSh))
     else:
        self.UVPlotFFTPlot.set_data(toplot)
@@ -1100,7 +1137,9 @@ class Interferometer(object):
   def _plotDirty(self,redo=True):
     Np4 = self.Npix/4
 
-    self.dirtymap[:] = (np.fft.fftshift(np.fft.ifft2(self.modelfft*np.fft.ifftshift(self.Grobustsamp)))).real/(1.+self.W2W1)
+    self.dirtymap[:] = (np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(self.GrobustNoise)+self.modelfft*np.fft.ifftshift(self.Grobustsamp)))).real/(1.+self.W2W1)
+
+  #  print 'RMS: ',np.std(np.abs(self.dirtymap[:])),np.max(np.abs(self.GrobustNoise)),np.max(np.abs(self.totsampling))
 
     if self.Nant2 > 1:
       self.dirtymap[:] += (np.fft.fftshift(np.fft.ifft2(self.modelfft2*np.fft.ifftshift(self.robustsamp2)))).real*(self.W2W1/(1.+self.W2W1))
@@ -1108,6 +1147,7 @@ class Interferometer(object):
     else:
       self.dirtymap /= self.beamScale
 
+  #  print 'RMS2: ',np.std(np.abs(self.dirtymap[:]))  #, self.beamScale
 
     extr = [np.min(self.dirtymap),np.max(self.dirtymap)]
     if redo:
@@ -1154,7 +1194,7 @@ class Interferometer(object):
     else:
       pl.setp(self.wax['subarrwgt'],visible=False)
     self.antPlotBas = self.antPlot.plot([0],[0],'-b')[0]
-    self.antPlotPlot = self.antPlot.plot(toplot[:,0],toplot[:,1],'og', picker=5)[0]
+    self.antPlotPlot = self.antPlot.plot(toplot[:,0],toplot[:,1],'o',color='lime', picker=5)[0]
     if self.Nant2>1:
       toplot2 = np.array(self.antPos2[:self.Nant2])
       self.antPlotPlot2 = self.antPlot.plot(toplot2[:,0],toplot2[:,1],'or', picker=5)[0]
@@ -1168,8 +1208,8 @@ class Interferometer(object):
     self.antText = self.antPlot.text(0.05,0.88,self.fmtA%(self.Nant+self.Nant2),transform=self.antPlot.transAxes)
     self.UVPlotPlot = []
     toplotu = self.u.flatten()/self.lfac ;  toplotv = self.v.flatten()/self.lfac ; 
-    self.UVPlotPlot.append(self.UVPlot.plot(toplotu, toplotv,'.g',markersize=1,picker=2)[0])
-    self.UVPlotPlot.append(self.UVPlot.plot(-toplotu,-toplotv,'.g',markersize=1,picker=2)[0])
+    self.UVPlotPlot.append(self.UVPlot.plot(toplotu, toplotv,'.',color='lime',markersize=1,picker=2)[0])
+    self.UVPlotPlot.append(self.UVPlot.plot(-toplotu,-toplotv,'.',color='lime',markersize=1,picker=2)[0])
     if self.Nant2>1:
       self.UVPlotPlot2 = []
       toplotu = self.u2.flatten()/self.lfac ;  toplotv = self.v2.flatten()/self.lfac ; 
@@ -1841,6 +1881,8 @@ class CLEANer(object):
   def quit(self):
 
     self.parent.myCLEAN = None
+    self.parent._setNoise(0.0)
+    self.parent._setGains(-1,-1,0,0,1.0)
     self.me.destroy()
     self.residuals[:] = 0.0
     self.cleanmod[:] = 0.0
@@ -1888,10 +1930,12 @@ class CLEANer(object):
     self.frames['Gain'] = Tk.Frame(self.frames['CLOpt'])
     self.frames['Niter'] = Tk.Frame(self.frames['CLOpt'])
     self.frames['Thres'] = Tk.Frame(self.frames['CLOpt'])
+    self.frames['Sensit'] = Tk.Frame(self.frames['CLOpt'])
 
     Gtext = Tk.Label(self.frames['Gain'],text="Gain:  ")
     Ntext = Tk.Label(self.frames['Niter'],text="# iter:")
     Ttext = Tk.Label(self.frames['Thres'],text="Thres (Jy/b):")
+    Stext = Tk.Label(self.frames['Sensit'],text="Sensit. (Jy/b):")
 
     self.entries = {}
     self.entries['Gain'] = Tk.Entry(self.frames['Gain'])
@@ -1905,6 +1949,10 @@ class CLEANer(object):
     self.entries['Thres'] = Tk.Entry(self.frames['Thres'])
     self.entries['Thres'].insert(0,"0.0")
     self.entries['Thres'].config(width=5)
+
+    self.entries['Sensit'] = Tk.Entry(self.frames['Sensit'])
+    self.entries['Sensit'].insert(0,"0.0")
+    self.entries['Sensit'].config(width=5)
 
 
 
@@ -1967,13 +2015,18 @@ class CLEANer(object):
     Ttext.pack(side=Tk.LEFT)
     self.entries['Thres'].pack(side=Tk.RIGHT)
 
+    Stext.pack(side=Tk.LEFT)
+    self.entries['Sensit'].pack(side=Tk.RIGHT)
+
+
     self.frames['CLOpt'].pack(side=Tk.LEFT)
 #    self.canvas2.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
     self.canvas1.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
 
     self.buttons = {}
+    self.buttons['Noise'] = Tk.Button(self.frames['CLOpt'],text="Redo Noise",command=self._ReNoise)
     self.buttons['clean'] = Tk.Button(self.frames['CLOpt'],text="CLEAN",command=self._CLEAN)
-    self.buttons['reset'] = Tk.Button(self.frames['CLOpt'],text="RESET",command=self._reset)
+    self.buttons['reset'] = Tk.Button(self.frames['CLOpt'],text="RELOAD",command=self._reset)
     self.buttons['addres'] = Tk.Button(self.frames['CLOpt'],text="+/- Resid",command=self._AddRes)
     self.buttons['dorestore'] = Tk.Button(self.frames['CLOpt'],text="(Un)restore",command=self._doRestore)
     self.buttons['dorescale'] = Tk.Button(self.frames['CLOpt'],text="Rescale",command=self._doRescale)
@@ -1999,6 +2052,12 @@ class CLEANer(object):
     self.buttons['showfft'].pack(side=Tk.TOP)
     self.buttons['convsource'].pack(side=Tk.TOP)
 
+    separator = Tk.Frame(self.frames['CLOpt'],height=4, bd=5, relief=Tk.SUNKEN)
+    separator.pack(fill=Tk.X, padx=10, pady=20,side=Tk.TOP)
+
+    self.frames['Sensit'].pack(side=Tk.TOP)
+    self.buttons['Noise'].pack(side=Tk.TOP)
+
     self.canvas1.mpl_connect('pick_event', self._onPick)
     self.canvas1.mpl_connect('motion_notify_event', self._doMask)
     self.canvas1.mpl_connect('button_release_event',self._onRelease)
@@ -2016,6 +2075,25 @@ class CLEANer(object):
     self.dorestore = True
     self._makeMask()
     self._reCalib()
+
+
+  def _ReNoise(self):
+    try:
+      sensit = float(self.entries['Sensit'].get())
+    except:
+      showinfo('ERROR!','Please, check the content of Sensit!\nIt should be a number!')
+      return
+
+    if sensit < 0.0: 
+      showinfo('ERROR!','The sensitivity should be >= 0!')
+      return
+
+   # Get the number of baselines and the number of integration times:
+
+    Nsamples = float(self.parent.Nbas*self.parent.nH)
+    sensPerSamp = sensit*np.sqrt(Nsamples)/np.sqrt(2.)
+    self.parent._setNoise(sensPerSamp)
+    self._reset(donoise=False)
 
 
   def _doRestore(self):
@@ -2097,7 +2175,8 @@ class CLEANer(object):
      yi = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.parent.Npix)
      xi = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.parent.Npix)
      Flux = self.residuals[xi,yi]
-     self.ResidText.set_text(self.parent.fmtD%(Flux,RA,Dec))
+     self.pickcoords = [xi,yi,RA,Dec]
+     self.ResidText.set_text(self.fmtD2%(Flux,RA,Dec,self.PEAK,self.RMS))
      if self.dorestore:
       if self.resadd:
        Flux = self.cleanmod[xi,yi] + self.residuals[xi,yi]
@@ -2107,7 +2186,7 @@ class CLEANer(object):
        Flux = self.cleanmodd[xi,yi]
 
 
-     self.CLEANText.set_text(self.parent.fmtD%(Flux,RA,Dec)+'\n'+self.Beamtxt)
+     self.CLEANText.set_text(self.fmtDC%(Flux,RA,Dec,self.CLEANPEAK,self.CLEANPEAK/self.RMS)+'\n'+self.Beamtxt)
 
 
      self.canvas1.draw()
@@ -2211,16 +2290,24 @@ class CLEANer(object):
 
 
 
-  def _reset(self):
+  def _reset(self,donoise=False):
 
     extr = [np.min(self.parent.dirtymap),np.max(self.parent.dirtymap)]
 
     self.ResidPlot.cla()
     self.dorestore = True
 
-    self.ResidPlotPlot = self.ResidPlot.imshow(self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4],interpolation='nearest',picker=True, cmap=self.parent.currcmap)
+    self.fmtD2 = r'% .2e Jy/beam at point' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f ' "\n" r'Peak: % 4.2f Jy/beam ; rms: % 4.2f Jy/beam'
+    self.fmtDC = r'Model: % .2e Jy/beam at point' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f ' "\n" r'Peak: % 4.2f Jy/beam ; Dyn. Range: % 4.2f'
+
+    dslice = self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+    self.ResidPlotPlot = self.ResidPlot.imshow(dslice,interpolation='nearest',picker=True, cmap=self.parent.currcmap)
     modflux = self.parent.dirtymap[self.parent.Nphf,self.parent.Nphf]
-    self.ResidText = self.ResidPlot.text(0.05,0.87,self.parent.fmtD%(modflux,0.0,0.0),
+    self.RMS = np.sqrt(np.var(dslice)+np.average(dslice)**2.)
+    self.PEAK = np.max(dslice)
+    self.CLEANPEAK = 0.0
+    self.pickcoords = [self.parent.Nphf,self.parent.Nphf,0.,0.]
+    self.ResidText = self.ResidPlot.text(0.05,0.87,self.fmtD2%(modflux,0.0,0.0,self.PEAK,self.RMS),
          transform=self.ResidPlot.transAxes,bbox=dict(facecolor='white', alpha=0.7))
     pl.setp(self.ResidPlotPlot, extent=(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
 
@@ -2246,7 +2333,7 @@ class CLEANer(object):
     self.CLEANPlot.cla()
     self.CLEANPlotPlot = self.CLEANPlot.imshow(self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4],interpolation='nearest',picker=True, cmap=self.parent.currcmap)
     modflux = self.parent.dirtymap[self.parent.Nphf,self.parent.Nphf]
-    self.CLEANText = self.CLEANPlot.text(0.05,0.87,self.parent.fmtD%(0.0,0.0,0.0),
+    self.CLEANText = self.CLEANPlot.text(0.05,0.83,self.fmtDC%(0.0,0.0,0.0,0.,0.),
          transform=self.CLEANPlot.transAxes,bbox=dict(facecolor='white', alpha=0.7))
     pl.setp(self.CLEANPlotPlot, extent=(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
     self.CLEANPlot.set_ylabel('Dec offset (as)')
@@ -2291,7 +2378,7 @@ class CLEANer(object):
         else:
           self.Beamtxt = '%.1f x %.1f mas (PA = %.1f deg.)'%(1000.*A,1000.*B,Pang)
 
-        self.CLEANText.set_text(self.parent.fmtD%(0.,0.,0.)+'\n'+self.Beamtxt)
+        self.CLEANText.set_text(self.fmtDC%(0.,0.,0.,0.,0.)+'\n'+self.Beamtxt)
     #    print 'BEAM FIT: ',fit[0], A, B, Pang
         ddX = np.outer(np.ones(self.parent.Npix),np.arange(-self.parent.Npix/2,self.parent.Npix/2).astype(np.float64))
         ddY = np.outer(np.arange(-self.parent.Npix/2,self.parent.Npix/2).astype(np.float64),np.ones(self.parent.Npix))
@@ -2313,7 +2400,8 @@ class CLEANer(object):
 
     self.totalClean = 0.0
 
-
+    if donoise:
+      self._ReNoise()
   #  self.canvas1.mpl_connect('key_press_event', self.parent._onKeyPress)
     self.canvas1.draw()
   #  self.canvas2.draw()
@@ -2338,7 +2426,7 @@ class CLEANer(object):
        thrs = float(self.entries['Thres'].get())
      except:
        showinfo('ERROR!','Please, check the content of Gain, # Iter, and Thres!\nShould be numbers!')
-
+       return
 
      for i in range(niter):
        self.totiter += 1
@@ -2352,6 +2440,7 @@ class CLEANer(object):
            showinfo('INFO','Threshold reached in CLEAN masks!')
            break
 
+       rslice = self.residuals[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
        peakpos = np.unravel_index(np.argmax(tempres),np.shape(self.residuals))
        peakval = self.residuals[peakpos[0],peakpos[1]]
        self.residuals -= gain*peakval*np.roll(np.roll(psf,peakpos[0]-self.parent.Npix/2,axis=0), peakpos[1]-self.parent.Npix/2,axis=1)
@@ -2359,23 +2448,39 @@ class CLEANer(object):
        # MODIFY CLEAN MODEL!!
        self.cleanmodd[peakpos[0],peakpos[1]] += gain*peakval
        self.cleanmod += gain*peakval*np.roll(np.roll(self.cleanBeam,peakpos[0]-self.parent.Npix/2,axis=0), peakpos[1]-self.parent.Npix/2,axis=1)
-       self.ResidPlotPlot.set_array(self.residuals[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4])
+       self.ResidPlotPlot.set_array(rslice)
 
+       self.CLEANPEAK = np.max(self.cleanmod)
        self.totalClean += gain*peakval
        self.CLEANPlot.set_title('CLEAN (%i ITER): %.2e Jy'%(self.totiter,self.totalClean))
 
+
+       xi,yi,RA,Dec = self.pickcoords
+
        if self.dorestore:
         if self.resadd:
-         toadd = (self.cleanmod + self.residuals)[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+         toadd = (self.cleanmod + self.residuals)
         else:
-         toadd = self.cleanmod[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+         toadd = self.cleanmod
        else:
-         toadd = self.cleanmodd[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+         toadd = self.cleanmodd
+
+       clFlux = toadd[xi,yi]
 
 
-       self.CLEANPlotPlot.set_array(toadd)
-       self.CLEANPlotPlot.norm.vmin = np.min(toadd)
-       self.CLEANPlotPlot.norm.vmax = np.max(toadd)
+       self.CLEANPlotPlot.set_array(toadd[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+)
+       self.CLEANPlotPlot.norm.vmin = np.min(toadd[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+)
+       self.CLEANPlotPlot.norm.vmax = np.max(toadd[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+)
+
+       self.RMS = np.sqrt(np.var(rslice)+np.average(rslice)**2.)
+       self.PEAK = np.max(rslice)
+  #     self.RMS = np.std(self.residuals)
+       self.ResidText.set_text(self.fmtD2%(self.residuals[xi,yi],RA,Dec,self.PEAK,self.RMS))
+       self.CLEANText.set_text(self.fmtDC%(clFlux,RA,Dec,self.CLEANPEAK,self.CLEANPEAK/self.RMS)+'\n'+self.Beamtxt)
+
 
        self.canvas1.draw()
 
