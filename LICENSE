@@ -20,3 +20,25 @@
 #############################################################################
 
 
+# THIS SOFTWARE USES STANDARD PYTHON LIBRARIES PLUS THE FOLLOWING 
+# EXTENSION MODULES: MATPLOTLIB, TKINTER, AND NUMPY/SCIPY
+
+
+# MATPLOTLIB LICENSE: http://matplotlib.org/users/license.html
+
+
+
+# TKINTER INFORMATION: https://wiki.python.org/moin/TkInter
+
+
+#############################
+# NUMPY/SCIPY LICENSE: https://github.com/scipy/scipy/blob/master/LICENSE.txt
+
+# Copyright (c) 2001, 2002 Enthought, Inc.
+# All rights reserved.
+
+# Copyright (c) 2003-2016 SciPy Developers.
+# All rights reserved.
+#############################
+
+

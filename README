@@ -78,6 +78,7 @@ The new "Reduce data" button opens a CLEAN GUI, where you can also corrupt
 your visibilities, to see the effect on the DIRTY and CLEAN images.
 
 
+
 ------------------
 NEW GUI FOR CLEAN
 ------------------
@@ -104,6 +105,8 @@ antenna positions, etc.).
 Pressing "+/- Resid" will add (or remove) the residuals from the CLEANed 
 image.  By default, the residuals are NOT added (i.e., only the restored
 CLEAN components are shown in the CLEAN image).
+
+You can also add random noise to your visibilities. See the help, from the program window, for more information.
 
 
 -----------------------------
