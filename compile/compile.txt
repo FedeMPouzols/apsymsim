@@ -3,4 +3,4 @@
 # DON'T FORGET TO CREATE A "__init__.py" EMPTY FILE IN THE 
 # "mpl_toolkits" DIRECTORY OF YOUR PYTHON INSTALLATION!
 
-e:\PYTHON\python.exe e:\PyInstaller-2.1\pyinstaller.py -y  z:\APSYNSIM\SCRIPT\APSYNSIM.spec
+e:\PYTHON\python.exe e:\PyInstaller-2.1\pyinstaller.py -y  z:\apsynsim\script\apsynsim.spec
