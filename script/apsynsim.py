@@ -234,12 +234,12 @@ class Interferometer(object):
     d1 = os.path.dirname(os.path.realpath(__file__))
     print d1
 
-#   execfile(os.path.join(os.path.basename(d1),'APSYNSIM.config'))
+#   execfile(os.path.join(os.path.basename(d1),'apsynsim.config'))
     try:
-      conf = open(os.path.join(d1,'APSYNSIM.config'))
+      conf = open(os.path.join(d1,'apsynsim.config'))
     except:
       d1 = os.getcwd()
-      conf = open(os.path.join(d1,'APSYNSIM.config'))
+      conf = open(os.path.join(d1,'apsynsim.config'))
       
     for line in conf.readlines():
       temp=line.replace(' ','')
@@ -259,9 +259,9 @@ class Interferometer(object):
     self.nH = nH
     self.Npix = Npix
 
-    self.datadir = os.path.join(d1,'..','PICTURES')
-    self.arraydir  = os.path.join(d1,'..','ARRAYS')
-    self.modeldir  = os.path.join(d1,'..','SOURCE_MODELS')
+    self.datadir = os.path.join(d1,'..','pictures')
+    self.arraydir  = os.path.join(d1,'..','arrays')
+    self.modeldir  = os.path.join(d1,'..','source_models')
 
  # Try to read a default initial array:
     if len(antenna_file)==0:
