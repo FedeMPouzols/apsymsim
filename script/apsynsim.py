@@ -376,13 +376,13 @@ class Interferometer(object):
     self.wax['add'] = pl.axes([0.07, 0.14, 0.08, 0.05])
     self.wax['rem'] = pl.axes([0.155, 0.14, 0.08, 0.05])
     self.wax['reduce'] = pl.axes([0.24, 0.14, 0.08, 0.05])
-    self.wax['save'] =  pl.axes([0.07, 0.08, 0.08, 0.05]) 
-    self.wax['loadarr']=pl.axes([0.155, 0.08, 0.08, 0.05])
-    self.wax['quit']=pl.axes([0.155, 0.02, 0.08, 0.05])
-    self.wax['loadmod']=pl.axes([0.24, 0.08, 0.08, 0.05])
-    self.wax['gammacorr']=pl.axes([0.46, 0.08, 0.13, 0.02], axisbg='white')
-    self.wax['diameter']=pl.axes([0.825, 0.08, 0.10, 0.02], axisbg='white')
-    self.wax['subarrwgt']=pl.axes([0.15, 0.58, 0.12, 0.02], axisbg='white')
+    self.wax['save'] = pl.axes([0.07, 0.08, 0.08, 0.05])
+    self.wax['loadarr'] = pl.axes([0.155, 0.08, 0.08, 0.05])
+    self.wax['quit'] = pl.axes([0.155, 0.02, 0.08, 0.05])
+    self.wax['loadmod'] = pl.axes([0.24, 0.08, 0.08, 0.05])
+    self.wax['gammacorr'] = pl.axes([0.46, 0.08, 0.13, 0.02], axisbg='white')
+    self.wax['diameter'] = pl.axes([0.825, 0.08, 0.10, 0.02], axisbg='white')
+    self.wax['subarrwgt'] = pl.axes([0.15, 0.58, 0.12, 0.02], axisbg='white')
     self.widget['robust'] = Slider(self.wax['robust'], r'Robust',
                                    -2., 2., valinit=0.0)
     self.widget['lat'] = Slider(self.wax['lat'], r'Lat (deg)',
@@ -403,18 +403,20 @@ class Interferometer(object):
     self.widget['save'] = Button(self.wax['save'], 'Save array')
     self.widget['loadarr'] = Button(self.wax['loadarr'], 'Load array')
     self.widget['loadmod'] = Button(self.wax['loadmod'], 'Load model')
-    self.widget['quit'] = Button(self.wax['quit'],'Quit')
+    self.widget['quit'] = Button(self.wax['quit'], 'Quit')
     self.widget['gammacorr'] = Slider(self.wax['gammacorr'],
-                                      'gamma',0.1, 1.0, valinit=self.gamma,
+                                      'gamma', 0.1, 1.0, valinit=self.gamma,
                                       color='red')
     self.widget['gammacorr'].label.set_color('white')
     self.widget['gammacorr'].valtext.set_color('white')
 
-    self.widget['diameter'] = Slider(self.wax['diameter'],'Dish size (m)',0,100.,valinit=0.0,color='red')
+    self.widget['diameter'] = Slider(self.wax['diameter'], 'Dish size (m)',
+                                     0, 100., valinit=0.0, color='red')
     self.widget['diameter'].label.set_color('white')
     self.widget['diameter'].valtext.set_color('white')
 
-    self.widget['subarrwgt'] = Slider(self.wax['subarrwgt'],'log(W1/W2)',-4,4,valinit=0,color='red')
+    self.widget['subarrwgt'] = Slider(self.wax['subarrwgt'], 'log(W1/W2)',
+                                      -4, 4, valinit=0, color='red')
 
     self.widget['robust'].on_changed(self._onRobust)
     self.widget['lat'].on_changed(self._onKeyLat)
@@ -433,7 +435,6 @@ class Interferometer(object):
     self.widget['subarrwgt'].on_changed(self._subarrwgt)
     self.widget['diameter'].on_changed(self._setDiameter)
 
-
     self._prepareBeam()
     self._prepareBaselines()
     self._setBaselines()
@@ -445,105 +446,102 @@ class Interferometer(object):
     self._plotDirty()
     self._plotModelFFT()
 
-
-
     self.canvas.draw()
 
-
-
-  def _setDiameter(self,diam):
+  def _setDiameter(self, diam):
 
     self.Diameters[0] = diam
     if self.GUIres:
       self._setPrimaryBeam(replotFFT=True)
       self._changeCoordinates(rescale=True)
 
-  def _reduce(self,event):
+  def _reduce(self, event):
 
     if self.tks is not None:
       self.myCLEAN = CLEANer(self)
-   
 
-  def readAntennas(self,antenna_file):
-    
+  def readAntennas(self, antenna_file):
+
     self.subarray = False
-    self.Hcov = [-12.0*self.Hfac,12.0*self.Hfac]
+    self.Hcov = [-12.0*self.Hfac, 12.0*self.Hfac]
     self.Hmax = np.pi
     self.lat = 45.*self.deg2rad
     self.dec = 60.*self.deg2rad
-    self.trlat = [np.sin(self.lat),np.cos(self.lat)]
+    self.trlat = [np.sin(self.lat), np.cos(self.lat)]
     self.trdec = [np.sin(self.dec), np.cos(self.dec)]
     self.Xmax = 4.0
-    self.Diameters = [0.,0.]
-    self.wavelength = [3.e-6, 21.e-5,6.e-5]  # in km.
+    self.Diameters = [0., 0.]
+    self.wavelength = [3.e-6, 21.e-5, 6.e-5]  # in km.
 
-    if len(antenna_file)==0:
+    if len(antenna_file) == 0:
       self.Nant = 7
-      self.antPos=[[0.0,0.0],[0.0,1.],[0.0,2.0],[1.,-1.],[2.0,-2.0],[-1.,-1.],[-2.0,-2.0]]
-      self.antPos2=[]
+      self.antPos = [[0.0, 0.0], [0.0, 1.], [0.0, 2.0],
+                     [1., -1.], [2.0, -2.0], [-1., -1.], [-2.0, -2.0]]
+      self.antPos2 = []
       self.Nant2 = 0
 
-    if len(antenna_file)>0: 
+    if len(antenna_file) > 0:
      if not os.path.exists(antenna_file):
-      self.showError("\n\nAntenna file %s does not exist!\n\n"%antenna_file)
+      self.showError("\n\nAntenna file %s does not exist!\n\n" % antenna_file)
       return False
-    
+
      else:
-      antPos=[]
-      antPos2=[]
-      Hcov = [0,0]
+      antPos = []
+      antPos2 = []
+      Hcov = [0, 0]
       Nant = 0
       Nant2 = 0
       Xmax = 0.0
       fi = open(antenna_file)
-      for li,l in enumerate(fi.readlines()):
+      for li, l in enumerate(fi.readlines()):
         comm = l.find('#')
-        if comm>=0:
-          l = l[:comm]     
+        if comm >= 0:
+          l = l[:comm]
         it = l.split()
-        if len(it)>0:
+        if len(it) > 0:
 
-          if it[0]=='WAVELENGTH':  
-            self.wavelength = [float(it[1])*1.e-3,float(it[2])*1.e-3]
+          if it[0] == 'WAVELENGTH':
+            self.wavelength = [float(it[1])*1.e-3, float(it[2])*1.e-3]
             self.wavelength.append((self.wavelength[0]+self.wavelength[1])/2.)
-          elif it[0]=='ANTENNA':   
-            antPos.append(map(float,it[1:]))
+          elif it[0] == 'ANTENNA':
+            antPos.append(map(float, it[1:]))
             Nant += 1
-            antPos[-1][0] *= 1.e-3 ; antPos[-1][1] *= 1.e-3
+            antPos[-1][0] *= 1.e-3
+            antPos[-1][1] *= 1.e-3
             Xmax = np.max(np.abs(antPos[-1]+[Xmax]))
-          elif it[0]=='ANTENNA2':   
-            antPos2.append(map(float,it[1:]))
+          elif it[0] == 'ANTENNA2':
+            antPos2.append(map(float, it[1:]))
             Nant2 += 1
-            antPos2[-1][0] *= 1.e-3 ; antPos2[-1][1] *= 1.e-3
+            antPos2[-1][0] *= 1.e-3
+            antPos2[-1][1] *= 1.e-3
             Xmax = np.max(np.abs(antPos2[-1]+[Xmax]))
-          elif it[0]=='DIAMETER':   
-            Diams = map(float,it[1:])
+          elif it[0] == 'DIAMETER':
+            Diams = map(float, it[1:])
             self.Diameters[0] = Diams[0]
-            if len(Diams)>1:
+            if len(Diams) > 1:
               self.Diameters[1] = Diams[1]
-          elif it[0]=='LATITUDE':
+          elif it[0] == 'LATITUDE':
             lat = float(it[1])*self.deg2rad
-            trlat = [np.sin(lat),np.cos(lat)]
-          elif it[0]=='DECLINATION':
+            trlat = [np.sin(lat), np.cos(lat)]
+          elif it[0] == 'DECLINATION':
             dec = float(it[1])*self.deg2rad
-            trdec = [np.sin(dec),np.cos(dec)]
-          elif it[0]=='HOUR_ANGLE':
+            trdec = [np.sin(dec), np.cos(dec)]
+          elif it[0] == 'HOUR_ANGLE':
             Hcov[0] = float(it[1])*self.Hfac
             Hcov[1] = float(it[2])*self.Hfac
           else:
-            self.showError("\n\nWRONG SYNTAX IN LINE %i:\n\n %s...\n\n"%(li+1,l[:max(10,len(l))]))
+            self.showError("\n\nWRONG SYNTAX IN LINE %i:\n\n %s...\n\n" %
+                           (li+1, l[:max(10, len(l))]))
 
       if Nant2 > 1:
         self.subarray = True
 
-      if np.abs(lat-dec>=np.pi/2.):
+      if np.abs(lat-dec >= np.pi/2.):
          self.showError("\n\nSource is either not observable or just at the horizon!\n\n")
          return False
-      if Nant<2:
+      if Nant < 2:
          self.showError("\n\nThere should be at least 2 antennas!\n\n")
          return False
-
-
 
       self.Nant = Nant
       self.antPos = antPos
@@ -556,44 +554,41 @@ class Interferometer(object):
       self.Hcov = Hcov
       self.Xmax = Xmax
 
-
       cosW = -np.tan(self.lat)*np.tan(self.dec)
       if np.abs(cosW) < 1.0:
         Hhor = np.arccos(cosW)
-      elif np.abs(self.lat-self.dec)>np.pi/2.:
+      elif np.abs(self.lat-self.dec) > np.pi/2.:
         Hhor = 0
       else:
         Hhor = np.pi
 
-      if Hhor>0.0:
-        if self.Hcov[0]< -Hhor:
+      if Hhor > 0.0:
+        if self.Hcov[0] < -Hhor:
           self.Hcov[0] = -Hhor
-        if self.Hcov[1]>  Hhor:
-          self.Hcov[1] =  Hhor
+        if self.Hcov[1] > Hhor:
+          self.Hcov[1] = Hhor
 
       self.Hmax = Hhor
-      H = np.linspace(self.Hcov[0],self.Hcov[1],self.nH)[np.newaxis,:]
+      H = np.linspace(self.Hcov[0], self.Hcov[1], self.nH)[np.newaxis, :]
       self.Xmax = Xmax*1.5
       fi.close()
-   
+
     return True
 
+  def readModels(self, model_file):
 
-
-
-  def readModels(self,model_file):
-
-    self.imsize = 4. 
+    self.imsize = 4.
     self.imfiles = []
 
-    if len(model_file)==0:
-      self.models = [['G',0.,0.4,1.0,0.1],['D',0.,0.,2.,0.5],['P',-0.4,-0.5,0.1]]
+    if len(model_file) == 0:
+      self.models = [['G', 0., 0.4, 1.0, 0.1], ['D', 0., 0., 2., 0.5],
+                     ['P', -0.4, -0.5, 0.1]]
       self.Xaxmax = self.imsize/2.
       return True
 
-    if len(model_file)>0: 
+    if len(model_file) > 0:
      if not os.path.exists(model_file):
-      self.showError("\n\nModel file %s does not exist!\n\n"%model_file)
+      self.showError("\n\nModel file %s does not exist!\n\n" % model_file)
       return False
 
      else:
@@ -602,164 +597,156 @@ class Interferometer(object):
       imfiles = []
       Xmax = 0.0
       fi = open(model_file)
-      for li,l in enumerate(fi.readlines()):
+      for li, l in enumerate(fi.readlines()):
         comm = l.find('#')
-        if comm>=0:
-          l = l[:comm]     
+        if comm >= 0:
+          l = l[:comm]
         it = l.split()
-        if len(it)>0:
-          if it[0]=='IMAGE':
-            imfiles.append([str(it[1]),float(it[2])])
-          elif it[0] in ['G','D','P']:   
-            models.append([it[0]]+map(float,it[1:]))
+        if len(it) > 0:
+          if it[0] == 'IMAGE':
+            imfiles.append([str(it[1]), float(it[2])])
+          elif it[0] in ['G', 'D', 'P']:
+            models.append([it[0]]+map(float, it[1:]))
             if models[-1][0] != 'P':
               models[-1][4] = np.abs(models[-1][4])
               Xmax = np.max([np.abs(models[-1][1])+models[-1][4],
-                 np.abs(models[-1][2])+models[-1][4],Xmax])
+                             np.abs(models[-1][2])+models[-1][4], Xmax])
 #          elif it[0] == 'WAVELENGTH':
 #            wavelength = float(it[1])*1.e-3
           elif it[0] == 'IMSIZE':
             imsize = 2.*float(it[1])
             fixsize = True
           else:
-            self.showError("\n\nWRONG SYNTAX IN LINE %i:\n\n %s...\n\n"%(li+1,l[:max(10,len(l))]))
+            self.showError("\n\nWRONG SYNTAX IN LINE %i:\n\n %s...\n\n" %
+                           (li+1, l[:max(10, len(l))]))
 
-      if len(models)+len(imfiles)==0:
+      if len(models)+len(imfiles) == 0:
          self.showError("\n\nThere should be at least 1 model component!\n\n")
 
-      self.models=models
+      self.models = models
 #      self.wavelength=wavelength
-      self.imsize=imsize
+      self.imsize = imsize
       self.imfiles = imfiles
 
       if not fixsize:
         self.imsize = Xmax*1.1
 
-
       self.Xaxmax = self.imsize/2.
 
       fi.close()
 
-
-
     return True
 
-
-
-
-
-  def _changeWavelength(self,wave,redoUV=False):
+  def _changeWavelength(self, wave, redoUV=False):
 
      if not self.GUIres:
        return
 
      self.wavelength[2] = wave*1.e-6
-     fmtB1 = r'$\lambda = $ %4.1fmm  '%(self.wavelength[2]*1.e6)
+     fmtB1 = r'$\lambda = $ %4.1fmm  ' % (self.wavelength[2]*1.e6)
      self.fmtB = fmtB1 + "\n" r'% 4.2f Jy/beam' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f '
 
    #  self._plotAntennas(redo=False)
      self._setPrimaryBeam(replotFFT=True)
-     self._changeCoordinates(rescale=True,redoUV=redoUV)
-   #  self._plotModelFFT(redo=False) 
+     self._changeCoordinates(rescale=True, redoUV=redoUV)
+   #  self._plotModelFFT(redo=False)
 
+  def _changeCoordinates(self, rescale=False, redoUV=False):
 
-
-  def _changeCoordinates(self,rescale=False,redoUV=False):
-
-    if self.lat>np.pi/2.:
+    if self.lat > np.pi/2.:
       self.lat = np.pi/2.
       return
-    elif self.lat<-np.pi/2.:
+    elif self.lat < -np.pi/2.:
       self.lat = -np.pi/2.
       return
 
-    if self.dec>np.pi/2.:
+    if self.dec > np.pi/2.:
       self.dec = np.pi/2.
       return
-    elif self.dec<-np.pi/2.:
+    elif self.dec < -np.pi/2.:
       self.dec = -np.pi/2.
       return
 
-    self.trlat = [np.sin(self.lat),np.cos(self.lat)]
+    self.trlat = [np.sin(self.lat), np.cos(self.lat)]
     self.trdec = [np.sin(self.dec), np.cos(self.dec)]
-
 
     cosW = -np.tan(self.lat)*np.tan(self.dec)
     if np.abs(cosW) < 1.0:
       Hhor = np.arccos(cosW)
-    elif np.abs(self.lat-self.dec)>np.pi/2.:
+    elif np.abs(self.lat-self.dec) > np.pi/2.:
       Hhor = 0
     else:
       Hhor = np.pi
 
     self.Hmax = Hhor
 
-    if self.Hmax>0.0:
-      if self.Hcov[0]< -self.Hmax:
+    if self.Hmax > 0.0:
+      if self.Hcov[0] < -self.Hmax:
         self.Hcov[0] = -self.Hmax
-        self.lock=True
+        self.lock = True
         self.widget['H0'].set_val(self.Hcov[0]/self.Hfac)
-        self.lock=False
-      if self.Hcov[1]>  self.Hmax:
-        self.Hcov[1] =  self.Hmax
-        self.lock=True
+        self.lock = False
+      if self.Hcov[1] > self.Hmax:
+        self.Hcov[1] = self.Hmax
+        self.lock = True
         self.widget['H1'].set_val(self.Hcov[1]/self.Hfac)
-        self.lock=False
+        self.lock = False
 
     if redoUV:
       self.UVPlot.cla()
-      self._plotModelFFT(redo=True) 
-      self._plotAntennas(redo=True,rescale=True)
+      self._plotModelFFT(redo=True)
+      self._plotAntennas(redo=True, rescale=True)
 
-    newtext = self.fmtH%(self.lat/self.deg2rad,self.dec/self.deg2rad,self.Hcov[0]/self.Hfac,self.Hcov[1]/self.Hfac)
+    newtext = self.fmtH % (self.lat/self.deg2rad, self.dec/self.deg2rad,
+                           self.Hcov[0]/self.Hfac, self.Hcov[1]/self.Hfac)
     self.latText.set_text(newtext)
-    self.Horig =  np.linspace(self.Hcov[0],self.Hcov[1],self.nH)
-    H = self.Horig[np.newaxis,:]
-    self.H = [np.sin(H),np.cos(H)] 
+    self.Horig = np.linspace(self.Hcov[0], self.Hcov[1], self.nH)
+    H = self.Horig[np.newaxis, :]
+    self.H = [np.sin(H), np.cos(H)]
     self._setBaselines()
     self._setBeam()
     self._plotBeam(redo=False)
-    self._plotAntennas(redo=False,rescale=True)
+    self._plotAntennas(redo=False, rescale=True)
     self._plotDirty(redo=False)
 
-    self.beamText.set_text(self.fmtB%(1.0,0.0,0.0))
-    newtext = self.fmtVis%(self.totflux,0.0)
+    self.beamText.set_text(self.fmtB % (1.0, 0.0, 0.0))
+    newtext = self.fmtVis % (self.totflux, 0.0)
     self.visText.set_text(newtext)
-    dirflux = self.dirtymap[self.Nphf,self.Nphf]
-    modflux = self.modelimTrue[self.Nphf,self.Nphf]
-    self.dirtyText.set_text(self.fmtD%(dirflux,0.0,0.0))
-    self.modelText.set_text(self.fmtM%(modflux,0.0,0.0))
-    self.basText.set_text(self.fmtBas%(0,0,0.0))
-    self.antPlotBas.set_data([[0],[0]])
-    
+    dirflux = self.dirtymap[self.Nphf, self.Nphf]
+    modflux = self.modelimTrue[self.Nphf, self.Nphf]
+    self.dirtyText.set_text(self.fmtD % (dirflux, 0.0, 0.0))
+    self.modelText.set_text(self.fmtM % (modflux, 0.0, 0.0))
+    self.basText.set_text(self.fmtBas % (0, 0, 0.0))
+    self.antPlotBas.set_data([[0], [0]])
+
     pl.draw()
     self.canvas.draw()
 
-
-  def _setNoise(self,noise):
+  def _setNoise(self, noise):
     if noise == 0.0:
       self.Noise[:] = 0.0
     else:
-      self.Noise[:] = np.random.normal(loc=0.0,scale=noise,size=np.shape(self.Noise))+1.j*np.random.normal(loc=0.0,scale=noise,size=np.shape(self.Noise))
+      self.Noise[:] = (np.random.normal(loc=0.0, scale=noise,
+                                        size=np.shape(self.Noise)) +
+                       1.j*np.random.normal(loc=0.0, scale=noise,
+                                            size=np.shape(self.Noise)))
     self._setBaselines()
     self._setBeam()
     self._plotBeam(redo=False)
     self._plotDirty(redo=False)
     self.canvas.draw()
 
-
-  def _setGains(self,An1,An2,H0,H1,G):
+  def _setGains(self, An1, An2, H0, H1, G):
 
     self.Gains[:] = 1.0
 
     for nb in range(self.Nbas):
       if An1 == self.antnum[nb][0]:
         if An2 == -1 or An2 == self.antnum[nb][1]:
-          self.Gains[nb,H0:H1] *= G
+          self.Gains[nb, H0:H1] *= G
       if An1 == self.antnum[nb][1]:
         if An2 == -1 or An2 == self.antnum[nb][0]:
-         self.Gains[nb,H0:H1] *= np.conjugate(G)
-
+         self.Gains[nb, H0:H1] *= np.conjugate(G)
 
     self._setBaselines()
     self._setBeam()
@@ -767,85 +754,78 @@ class Interferometer(object):
     self._plotDirty(redo=False)
     self.canvas.draw()
 
-
-
   def _prepareBeam(self):
-    
-    self.beam = np.zeros((self.Npix,self.Npix),dtype=np.float32)
-    self.totsampling = np.zeros((self.Npix,self.Npix),dtype=np.float32)
-    self.dirtymap = np.zeros((self.Npix,self.Npix),dtype=np.float32)
-    self.noisemap = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
-    self.robustsamp = np.zeros((self.Npix,self.Npix),dtype=np.float32)
-    self.Gsampling = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
-    self.Grobustsamp = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
-    self.GrobustNoise = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
 
-    self.beam2 = np.zeros((self.Npix,self.Npix),dtype=np.float32)
-    self.totsampling2 = np.zeros((self.Npix,self.Npix),dtype=np.float32)
-    self.dirtymap2 = np.zeros((self.Npix,self.Npix),dtype=np.float32)
-    self.robustsamp2 = np.zeros((self.Npix,self.Npix),dtype=np.float32)
+    self.beam = np.zeros((self.Npix, self.Npix), dtype=np.float32)
+    self.totsampling = np.zeros((self.Npix, self.Npix), dtype=np.float32)
+    self.dirtymap = np.zeros((self.Npix, self.Npix), dtype=np.float32)
+    self.noisemap = np.zeros((self.Npix, self.Npix), dtype=np.complex64)
+    self.robustsamp = np.zeros((self.Npix, self.Npix), dtype=np.float32)
+    self.Gsampling = np.zeros((self.Npix, self.Npix), dtype=np.complex64)
+    self.Grobustsamp = np.zeros((self.Npix, self.Npix), dtype=np.complex64)
+    self.GrobustNoise = np.zeros((self.Npix, self.Npix), dtype=np.complex64)
+
+    self.beam2 = np.zeros((self.Npix, self.Npix), dtype=np.float32)
+    self.totsampling2 = np.zeros((self.Npix, self.Npix), dtype=np.float32)
+    self.dirtymap2 = np.zeros((self.Npix, self.Npix), dtype=np.float32)
+    self.robustsamp2 = np.zeros((self.Npix, self.Npix), dtype=np.float32)
   #  self.Gsampling2 = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
   #  self.Grobustsamp2 = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
-
-
 
   def _prepareBaselines(self):
 
     self.Nbas = self.Nant*(self.Nant-1)/2
     NBmax = self.Nbas
-    self.B = np.zeros((NBmax,self.nH),dtype=np.float32)
-    self.basnum = np.zeros((self.Nant,self.Nant-1),dtype=np.int8)
-    self.basidx = np.zeros((self.Nant,self.Nant),dtype=np.int8)
-    self.antnum = np.zeros((NBmax,2),dtype=np.int8)
-    self.Gains = np.ones((self.Nbas,self.nH),dtype=np.complex64)
-    self.Noise = np.zeros((self.Nbas,self.nH),dtype=np.complex64)
-    self.Horig = np.linspace(self.Hcov[0],self.Hcov[1],self.nH)
-    H = self.Horig[np.newaxis,:]
-    self.H = [np.sin(H),np.cos(H)]
+    self.B = np.zeros((NBmax, self.nH), dtype=np.float32)
+    self.basnum = np.zeros((self.Nant, self.Nant-1), dtype=np.int8)
+    self.basidx = np.zeros((self.Nant, self.Nant), dtype=np.int8)
+    self.antnum = np.zeros((NBmax, 2), dtype=np.int8)
+    self.Gains = np.ones((self.Nbas, self.nH), dtype=np.complex64)
+    self.Noise = np.zeros((self.Nbas, self.nH), dtype=np.complex64)
+    self.Horig = np.linspace(self.Hcov[0], self.Hcov[1], self.nH)
+    H = self.Horig[np.newaxis, :]
+    self.H = [np.sin(H), np.cos(H)]
 
     bi = 0
     nii = [0 for n in range(self.Nant)]
     for n1 in range(self.Nant-1):
-      for n2 in range(n1+1,self.Nant):
-        self.basnum[n1,nii[n1]] = bi
-        self.basnum[n2,nii[n2]] = bi
-        self.basidx[n1,n2] = bi
-        self.antnum[bi] = [n1,n2]
-        nii[n1] += 1; nii[n2] += 1
+      for n2 in range(n1+1, self.Nant):
+        self.basnum[n1, nii[n1]] = bi
+        self.basnum[n2, nii[n2]] = bi
+        self.basidx[n1, n2] = bi
+        self.antnum[bi] = [n1, n2]
+        nii[n1] += 1
+        nii[n2] += 1
         bi += 1
 
-    self.u = np.zeros((NBmax,self.nH))
-    self.v = np.zeros((NBmax,self.nH))
-    self.ravelDims = (NBmax,self.nH)
+    self.u = np.zeros((NBmax, self.nH))
+    self.v = np.zeros((NBmax, self.nH))
+    self.ravelDims = (NBmax, self.nH)
 
     if self.Nant2 > 1:
       self.Nbas2 = self.Nant2*(self.Nant2-1)/2
       NBmax2 = self.Nbas2
-      self.B2 = np.zeros((NBmax2,self.nH),dtype=np.float32)
-      self.basnum2 = np.zeros((self.Nant2,self.Nant2-1),dtype=np.int8)
-      self.basidx2 = np.zeros((self.Nant2,self.Nant2),dtype=np.int8)
-      self.antnum2 = np.zeros((NBmax2,2),dtype=np.int8)
-      self.Gains2 = np.ones((self.Nbas2,self.nH),dtype=np.complex64)
-      self.H = [np.sin(H),np.cos(H)]
+      self.B2 = np.zeros((NBmax2, self.nH), dtype=np.float32)
+      self.basnum2 = np.zeros((self.Nant2, self.Nant2-1), dtype=np.int8)
+      self.basidx2 = np.zeros((self.Nant2, self.Nant2), dtype=np.int8)
+      self.antnum2 = np.zeros((NBmax2,2), dtype=np.int8)
+      self.Gains2 = np.ones((self.Nbas2,self.nH), dtype=np.complex64)
+      self.H = [np.sin(H), np.cos(H)]
 
       bi = 0
       nii = [0 for n in range(self.Nant2)]
       for n1 in range(self.Nant2-1):
-        for n2 in range(n1+1,self.Nant2):
-          self.basnum2[n1,nii[n1]] = bi
-          self.basnum2[n2,nii[n2]] = bi
-          self.basidx2[n1,n2] = bi
-          self.antnum2[bi] = [n1,n2]
+        for n2 in range(n1+1, self.Nant2):
+          self.basnum2[n1, nii[n1]] = bi
+          self.basnum2[n2, nii[n2]] = bi
+          self.basidx2[n1, n2] = bi
+          self.antnum2[bi] = [n1, n2]
           nii[n1] += 1; nii[n2] += 1
           bi += 1
 
-      self.u2 = np.zeros((NBmax2,self.nH))
-      self.v2 = np.zeros((NBmax2,self.nH))
-      self.ravelDims2 = (NBmax2,self.nH)
-
-
-
-
+      self.u2 = np.zeros((NBmax2, self.nH))
+      self.v2 = np.zeros((NBmax2, self.nH))
+      self.ravelDims2 = (NBmax2, self.nH)
 
   def _setBaselines(self,antidx=-1):
 
@@ -2989,23 +2969,7 @@ class UVPLOTTER(object):
       self.UVSOURCEText.set_text(self.UVfmt%0.0)
       self.UVSOURCECONVText.set_text(self.UVfmt%0.0)
 
-
     self.canvasUV1.draw()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
