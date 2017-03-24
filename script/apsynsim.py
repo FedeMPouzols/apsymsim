@@ -19,103 +19,102 @@
 #
 #############################################################################
 
-#import Tkinter
 import FileDialog
-import matplotlib as mpl
-mpl.use('TkAgg')
 import numpy as np
 import pylab as pl
+import os
 import scipy.ndimage.interpolation as spndint
 import scipy.optimize as spfit
+from ScrolledText import ScrolledText
+import sys
+import time
+
+import matplotlib as mpl
 from matplotlib.widgets import Slider, Button
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.cm as cm
 import matplotlib.image as plimg
-from ScrolledText import ScrolledText
-
-
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
-try:
-  import Tkinter as Tk
-except:
-  import tkinter as Tk
-
-
 from matplotlib.backend_bases import NavigationToolbar2
+from mpl_toolkits.mplot3d import Axes3D
+
+
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
+                                               NavigationToolbar2TkAgg)
+try:
+    import Tkinter as Tk
+except:
+    import tkinter as Tk
+
 import tkFileDialog
 from tkMessageBox import showinfo
-import os
-import time
-import sys
+
+mpl.use('TkAgg')
 
 __version__ = '1.4-b'
 
 
-
-__help_text__ = """ 
+__help_text__ = """
      APSYNSIM, A REAL-TIME APERTURE SYNTHESIS SIMULATOR
 
-                     IVAN MARTI-VIDAL 
+                     IVAN MARTI-VIDAL
 (ONSALA SPACE OBSERVATORY, NORDIC ALMA REGIONAL CENTER NODE)
 
 You can click and drag the antennas in the plot called "ARRAY CONFIGURATION".
-When you drag an antenna, all other plots (UV PLANE, DIRTY BEAM, and DIRTY 
-IMAGE) will be updated automatically (may need some time to refresh, 
+When you drag an antenna, all other plots (UV PLANE, DIRTY BEAM, and DIRTY
+IMAGE) will be updated automatically (may need some time to refresh,
 especially if working on Windows and/or with many antennas).
 
-You can also click on any point of the DIRTY BEAM, MODEL IMAGE, or DIRTY 
-IMAGE plots, and the program will tell you the intensity value and the pixel 
+You can also click on any point of the DIRTY BEAM, MODEL IMAGE, or DIRTY
+IMAGE plots, and the program will tell you the intensity value and the pixel
 coordinates.
 
-If you click on the UV PLANE image, the program will print the value of the 
+If you click on the UV PLANE image, the program will print the value of the
 source Fourier transform at that point. If you click close to a point observed
 with the interferometer, the program will tell you the baseline and hour
 angle of observation.
 
-You can also change the observing latitude, hour-angle coverage, source 
-declination, and observing wavelength by clicking on the blue sliders at 
-the bottom-right corner of the figure. The plots will be updated 
+You can also change the observing latitude, hour-angle coverage, source
+declination, and observing wavelength by clicking on the blue sliders at
+the bottom-right corner of the figure. The plots will be updated
 automatically (may also need some time to refresh all plots).
 
 The dirty beam is computed using Briggs weighting. The robustness parameter
-can be changed by shifting the corresponding blue slider (robustness of -2 
+can be changed by shifting the corresponding blue slider (robustness of -2
 tends to uniform weighting, whereas +2 tends to natural weighting).
 
-You can add and/or subtract antennas by pressing the "+ Antenna" and 
-"- Antenna" buttons. New antennas are inserted at the array origin (0,0). 
-If you add, drag, and subtract an antenna, the program will remember the 
+You can add and/or subtract antennas by pressing the "+ Antenna" and
+"- Antenna" buttons. New antennas are inserted at the array origin (0,0).
+If you add, drag, and subtract an antenna, the program will remember the
 last antenna positions if you add them again.
 
-You can save the current array, load a new array (for instance, from the 
-EXAMPLES folder), and/or load a new source model (for instance, from 
-the EXAMPLES folder) by pressing the corresponding buttons "Save array", 
+You can save the current array, load a new array (for instance, from the
+EXAMPLES folder), and/or load a new source model (for instance, from
+the EXAMPLES folder) by pressing the corresponding buttons "Save array",
 "Load array" and "Load model".
 
-You can also zoom in/out by pressing "Z" or "z" (respectively). The program 
+You can also zoom in/out by pressing "Z" or "z" (respectively). The program
 will then zoom using the current cursor position as zooming center.
 
 Pressing "c" will toggle the color code of the figures (from hue to grayscale).
 
-Pressing "u" will pop-up a window with several plots in Fourier space. 
+Pressing "u" will pop-up a window with several plots in Fourier space.
 
 Pressing the "Reduce data" button will open a new window, where you can
-CLEAN your dirty image and apply corrupting gains to your antennas (see 
+CLEAN your dirty image and apply corrupting gains to your antennas (see
 help in that window for more details).
 
 Enjoy!
 
-
 """
 
 
-__CLEAN_help_text__ = """ 
+__CLEAN_help_text__ = """
 APSYNSIM - CLEAN GUI
 
-Here you can experiment with CLEAN deconvolution on (noise-free) 
+Here you can experiment with CLEAN deconvolution on (noise-free)
 visibilities. You can also corrupt the visibilities by adding a complex
-gain to one of your antennas (or baselines). 
+gain to one of your antennas (or baselines).
 
-Clicking and dragging, with the LEFT mouse button, on the RESIDUALS image 
+Clicking and dragging, with the LEFT mouse button, on the RESIDUALS image
 creates new CLEAN mask regions. Clicking and dragging with the RIGHT mouse
 button removes CLEAN mask regions. You can add as many CLEAN mask regions
 as you want.
@@ -123,21 +122,21 @@ as you want.
 The CLEAN gain and number of iterations can be changed in the text boxes.
 Pressing CLEAN executes the iterations, refreshing all images in real time.
 You can further click on CLEAN, to continue deconvolving. The box "Thres"
-is the CLEAN threshold (in Jy per beam). Setting it to negative values will 
+is the CLEAN threshold (in Jy per beam). Setting it to negative values will
 allow CLEANing negative components.
 
 
-Pressing RELOAD will undo all CLEANING and update the images from the 
-main window. That is, if you change anything in the main program window 
-(e.g., observing wavelength, antenna positions, etc.), pressing RELOAD 
+Pressing RELOAD will undo all CLEANING and update the images from the
+main window. That is, if you change anything in the main program window
+(e.g., observing wavelength, antenna positions, etc.), pressing RELOAD
 will apply such changes to the images in the CLEAN interface.
 
-TIP: You can load more than one CLEAN GUI, change anything in the main 
-window and press "RELOAD" just in one of the GUIs. This way, you can 
-compare directly how the changes you made in the main window affect the 
+TIP: You can load more than one CLEAN GUI, change anything in the main
+window and press "RELOAD" just in one of the GUIs. This way, you can
+compare directly how the changes you made in the main window affect the
 CLEANing!
 
-Pressing "+/- Resid" will add (or remove) the residuals from the CLEANed 
+Pressing "+/- Resid" will add (or remove) the residuals from the CLEANed
 image.  By default, the residuals are NOT added (i.e., only the restored
 CLEAN components are shown in the CLEAN image).
 
@@ -147,18 +146,18 @@ the CLEAN beam when plotting. Default status is to apply the restore.
 Pressing "Rescale" will rescale the color palette (e.g., to see better
 the structure of the residuals).
 
-Pressing "True source (conv.)" will show the true source structure 
-convolved with the CLEAN beam. This is to compare the fidelity of the 
-CLEAN deconvolution algorithm, by comparing the CLEAN image to the 
+Pressing "True source (conv.)" will show the true source structure
+convolved with the CLEAN beam. This is to compare the fidelity of the
+CLEAN deconvolution algorithm, by comparing the CLEAN image to the
 true source brightness distribution (downgraded to the CLEAN resolution).
 
 You can add random noise to your visibilities by setting a sensitivity
-(in the "Sensit." text) and pressing "Redo Noise". Any time that you 
-press this button, a new realisation of the random noise will be 
-computed. "Sensit." is the expected rms that you would get from of a 
-source-free observation, using natural weighting. Basically, the noise 
+(in the "Sensit." text) and pressing "Redo Noise". Any time that you
+press this button, a new realisation of the random noise will be
+computed. "Sensit." is the expected rms that you would get from of a
+source-free observation, using natural weighting. Basically, the noise
 added to each visibility is proportional to Sensit.*sqrt(Nbas*Nt), where
-Nbas is the number of baselines and Nt is the number of integration 
+Nbas is the number of baselines and Nt is the number of integration
 times per baseline.
 
 -----------------------------
@@ -166,39 +165,39 @@ HOW TO ADD A CORRUPTING GAIN
 -----------------------------
 
 Just select an antenna from the "Ant. 1" list to corrupt it. If you select
-a different antenna from the "Ant. 2" list, only the baseline between 
+a different antenna from the "Ant. 2" list, only the baseline between
 the two antennas will be corrupted. But if the two antennas are the same,
 then ALL the baselines to that antenna will be corrupted.
 
-The two first sliders ("From integration" and "to integration") mark the 
+The two first sliders ("From integration" and "to integration") mark the
 first and last observing scans where the corruption term will be applied.
 By default, the whole duration of the experiment is selected.
 
-The last two sliders ("Amplitude gain" and "phase gain") define the gain 
-that will be applied to the corrupted antenna. 
+The last two sliders ("Amplitude gain" and "phase gain") define the gain
+that will be applied to the corrupted antenna.
 
 The button "APPLY GAIN" actually applies the gain and reloads the new
-images. 
+images.
 
 The button "RESET GAIN", undoes the gain correction (so the data become
 perfectly calibrated again).
 
-NOTICE THAT if a new antenna is added, or subtracted, the gains are 
-reset automatically (but you will need to refresh the images in this 
-window, by pressing the "RESET" button, just below the "CLEAN" 
-button, to load the correct images). 
+NOTICE THAT if a new antenna is added, or subtracted, the gains are
+reset automatically (but you will need to refresh the images in this
+window, by pressing the "RESET" button, just below the "CLEAN"
+button, to load the correct images).
 
 """
 
 
 class Interferometer(object):
 
-  def quit(self,event=None):
-  
+  def quit(self, event=None):
+
     self.tks.destroy()
     sys.exit()
 
-  def __init__(self,antenna_file="",model_file="",tkroot=None):
+  def __init__(self, antenna_file="", model_file="", tkroot=None):
 
     self.__version__ = __version__
 
@@ -209,20 +208,20 @@ class Interferometer(object):
     self.tks.protocol("WM_DELETE_WINDOW", self.quit)
     self.Hfac = np.pi/180.*15.
     self.deg2rad = np.pi/180.
-    self.curzoom = [0,0,0,0]
+    self.curzoom = [0, 0, 0, 0]
     self.robust = 0.0
     self.deltaAng = 1.*self.deg2rad
     self.gamma = 0.5  # Gamma correction to plot model.
-    self.lfac = 1.e6   # Lambda units (i.e., 1.e6 => Mlambda)
+    self.lfac = 1.e6  # Lambda units (i.e., 1.e6 => Mlambda)
     self.ulab = r'U (M$\lambda$)'
     self.vlab = r'V (M$\lambda$)'
-    self.W2W1 = 1.0  # Relative weighting for subarrays.
+    self.W2W1 = 1.0   # Relative weighting for subarrays.
     self.currcmap = cm.jet
 
-    self.GUIres = True # Make some parts of the GUI respond to events
-    self.antLock = False # Lock antenna-update events
+    self.GUIres = True  # Make some parts of the GUI respond to events
+    self.antLock = False  # Lock antenna-update events
 
-    self.myCLEAN = None  # CLEANer instance (when initialized)
+    self.myCLEAN = None   # CLEANer instance (when initialized)
 
 # Default of defaults!
     nH = 200
@@ -236,22 +235,22 @@ class Interferometer(object):
 
 #   execfile(os.path.join(os.path.basename(d1),'apsynsim.config'))
     try:
-      conf = open(os.path.join(d1,'apsynsim.config'))
+      conf = open(os.path.join(d1, 'apsynsim.config'))
     except:
       d1 = os.getcwd()
-      conf = open(os.path.join(d1,'apsynsim.config'))
-      
+      conf = open(os.path.join(d1, 'apsynsim.config'))
+
     for line in conf.readlines():
-      temp=line.replace(' ','')
-      if len(temp)>2:
+      temp = line.replace(' ', '')
+      if len(temp) > 2:
          if temp[0:4] == 'Npix':
            Npix = int(temp[5:temp.find('#')])
          if temp[0:2] == 'nH':
            nH = int(temp[3:temp.find('#')])
          if temp[0:10] == 'DefaultMod':
-           DefaultModel = temp[12:temp.find('#')].replace('\'','').replace('\"','')
+           DefaultModel = temp[12:temp.find('#')].replace('\'', '').replace('\"', '')
          if temp[0:12] == 'DefaultArray':
-           DefaultArray = temp[14:temp.find('#')].replace('\'','').replace('\"','')
+           DefaultArray = temp[14:temp.find('#')].replace('\'', '').replace('\"', '')
 
     conf.close()
 
@@ -259,57 +258,53 @@ class Interferometer(object):
     self.nH = nH
     self.Npix = Npix
 
-    self.datadir = os.path.join(d1,'..','pictures')
-    self.arraydir  = os.path.join(d1,'..','arrays')
-    self.modeldir  = os.path.join(d1,'..','source_models')
+    self.datadir = os.path.join(d1, '..', 'pictures')
+    self.arraydir = os.path.join(d1, '..', 'arrays')
+    self.modeldir = os.path.join(d1, '..', 'source_models')
 
  # Try to read a default initial array:
-    if len(antenna_file)==0:
+    if len(antenna_file) == 0:
       try:
-        antenna_file = os.path.join(self.arraydir,DefaultArray)
+        antenna_file = os.path.join(self.arraydir, DefaultArray)
       except:
         pass
 
  # Try to read a default initial model:
-    if len(model_file)==0:
+    if len(model_file) == 0:
       try:
-        model_file = os.path.join(self.modeldir,DefaultModel)
+        model_file = os.path.join(self.modeldir, DefaultModel)
       except:
         pass
 
-
-    self.lock=False
+    self.lock = False
     self._onSphere = False
 
     self.readModels(str(model_file))
     self.readAntennas(str(antenna_file))
-    self.GUI() #makefigs=makefigs)
+    self.GUI()  # makefigs=makefigs)
 
-
-  def showError(self,message):
+  def showError(self, message):
     showinfo('ERROR!', message)
     raise Exception(message)
-
 
   def _getHelp(self):
     win = Tk.Toplevel(self.tks)
     win.title("Help")
     helptext = ScrolledText(win)
     helptext.config(state=Tk.NORMAL)
-    helptext.insert('1.0',__help_text__)
+    helptext.insert('1.0', __help_text__)
     helptext.config(state=Tk.DISABLED)
 
     helptext.pack()
     Tk.Button(win, text='OK', command=win.destroy).pack()
 
-
-  def GUI(self): # ,makefigs=True):
+  def GUI(self):  # ,makefigs=True):
 
     mpl.rcParams['toolbar'] = 'None'
 
     self.Nphf = self.Npix/2
     self.robfac = 0.0
-    self.figUV = pl.figure(figsize=(15,8))
+    self.figUV = pl.figure(figsize=(15, 8))
 
     if self.tks is None:
        self.canvas = self.figUV.canvas
@@ -323,86 +318,95 @@ class Interferometer(object):
       self.tks.config(menu=menubar)
       self.canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
 
+    self.antPlot = self.figUV.add_subplot(231, aspect='equal')
+    self.UVPlot = self.figUV.add_subplot(232, aspect='equal',
+                                         axisbg=(0.4, 0.4, 0.4))
+    self.beamPlot = self.figUV.add_subplot(233, aspect='equal')
+    self.modelPlot = self.figUV.add_subplot(235, aspect='equal')
+    self.dirtyPlot = self.figUV.add_subplot(236, aspect='equal')
 
-
-
-    self.antPlot = self.figUV.add_subplot(231,aspect='equal')
-    self.UVPlot = self.figUV.add_subplot(232,aspect='equal',axisbg=(0.4,0.4,0.4))
-    self.beamPlot = self.figUV.add_subplot(233,aspect='equal')
-    self.modelPlot = self.figUV.add_subplot(235,aspect='equal')
-    self.dirtyPlot = self.figUV.add_subplot(236,aspect='equal')
-
-    self.spherePlot = pl.axes([0.53,0.82,0.12,0.12],projection='3d',aspect='equal')
+    self.spherePlot = pl.axes([0.53, 0.82, 0.12, 0.12],
+                              projection='3d', aspect='equal')
 
     u = np.linspace(0, 2 * np.pi, 100)
     v = np.linspace(0, np.pi, 100)
     x = 10 * np.outer(np.cos(u), np.sin(v))
     y = 10 * np.outer(np.sin(u), np.sin(v))
     z = 10 * np.outer(np.ones(np.size(u)), np.cos(v))
-    self.spherePlotPlot = self.spherePlot.plot_surface(x, y, z,  rstride=4, cstride=4, color=(0.8,0.8,1.0))
+    self.spherePlotPlot = self.spherePlot.plot_surface(x, y, z, rstride=4,
+                                                       cstride=4, color=(0.8, 0.8, 1.0))
     self.spherePlot._axis3don = False
     self.spherePlot.patch.set_alpha(0.8)
     beta = np.zeros(100)
     self.arrayPath = [np.zeros(self.nH), np.zeros(self.nH), np.zeros(self.nH)]
-    self.sphereArray = self.spherePlot.plot([],[],[],'y',linewidth=3)
-    self.spherePlot.set_xlim3d((-6,6))
-    self.spherePlot.set_ylim3d((-6,6))
-    self.spherePlot.set_zlim3d((-6,6))
+    self.sphereArray = self.spherePlot.plot([], [], [], 'y', linewidth=3)
+    self.spherePlot.set_xlim3d((-6, 6))
+    self.spherePlot.set_ylim3d((-6, 6))
+    self.spherePlot.set_zlim3d((-6, 6))
     self.spherePlot.patch.set_alpha(0.8)
     self.spherePlot.elev = 45.
 
-
-    self.figUV.subplots_adjust(left=0.05,right=0.99,top=0.95,bottom=0.07,hspace=0.25)
+    self.figUV.subplots_adjust(left=0.05, right=0.99, top=0.95, bottom=0.07, hspace=0.25)
     self.canvas.mpl_connect('pick_event', self._onPick)
     self.canvas.mpl_connect('motion_notify_event', self._onAntennaDrag)
-    self.canvas.mpl_connect('button_release_event',self._onRelease)
-    self.canvas.mpl_connect('button_press_event',self._onPress)
+    self.canvas.mpl_connect('button_release_event', self._onRelease)
+    self.canvas.mpl_connect('button_press_event', self._onPress)
     self.canvas.mpl_connect('key_press_event', self._onKeyPress)
     self.pickAnt = False
 
     self.fmtH = r'$\phi = $ %3.1f$^\circ$   $\delta = $ %3.1f$^\circ$' "\n" r'H = %3.1fh / %3.1fh'
     self.fmtBas = r'Bas %i $-$ %i  at  H = %4.2fh'
-    self.fmtVis = r'Amp: %.1e Jy.   Phase: %5.1f deg.' 
+    self.fmtVis = r'Amp: %.1e Jy.   Phase: %5.1f deg.'
     self.fmtA = 'N = %i'
-    self.fmtA2 = '  Picked Ant. #%i' 
+    self.fmtA2 = '  Picked Ant. #%i'
     self.fmtA3 = '\n%6.1fm | %6.1fm'
-    fmtB1 = r'$\lambda = $ %4.1fmm  '%(self.wavelength[2]*1.e6)
+    fmtB1 = r'$\lambda = $ %4.1fmm  ' % (self.wavelength[2]*1.e6)
     self.fmtB = fmtB1 + "\n" + r'% 4.2f Jy/beam' + "\n" + r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f '
     self.fmtD = r'% .2e Jy/beam' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f '
     self.fmtM = r'%.2e Jy/pixel' "\n"  r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f'
 
     self.wax = {}
     self.widget = {}
-    self.wax['lat'] = pl.axes([0.07,0.45,0.25,0.04])
-    self.wax['dec'] = pl.axes([0.07,0.40,0.25,0.04])
-    self.wax['H0'] = pl.axes([0.07,0.35,0.25,0.04])
-    self.wax['H1'] = pl.axes([0.07,0.30,0.25,0.04])
-    self.wax['wave'] = pl.axes([0.07,0.25,0.25,0.04])
-    self.wax['robust'] = pl.axes([0.07,0.20,0.25,0.04])
-    self.wax['add'] = pl.axes([0.07,0.14,0.08,0.05])
-    self.wax['rem'] = pl.axes([0.155,0.14,0.08,0.05])
-    self.wax['reduce'] = pl.axes([0.24,0.14,0.08,0.05])
-    self.wax['save'] =  pl.axes([0.07,0.08,0.08,0.05]) 
-    self.wax['loadarr']=pl.axes([0.155,0.08,0.08,0.05])
-    self.wax['quit']=pl.axes([0.155,0.02,0.08,0.05])
-    self.wax['loadmod']=pl.axes([0.24,0.08,0.08,0.05])
-    self.wax['gammacorr']=pl.axes([0.46,0.08,0.13,0.02],axisbg='white')
-    self.wax['diameter']=pl.axes([0.825,0.08,0.10,0.02],axisbg='white')
-    self.wax['subarrwgt']=pl.axes([0.15,0.58,0.12,0.02],axisbg='white')
-    self.widget['robust'] = Slider(self.wax['robust'],r'Robust',-2.,2.,valinit=0.0)
-    self.widget['lat'] = Slider(self.wax['lat'],r'Lat (deg)',-90.,90.,valinit=self.lat/self.deg2rad)
-    self.widget['dec'] = Slider(self.wax['dec'],r'Dec (deg)',-90.,90.,valinit=self.dec/self.deg2rad)
-    self.widget['H0'] = Slider(self.wax['H0'],r'H$_{0}$ (h)',-12.,12.,valinit=self.Hcov[0]/self.Hfac)
-    self.widget['H1'] = Slider(self.wax['H1'],r'H$_{1}$ (h)',-12.,12.,valinit=self.Hcov[1]/self.Hfac)
-    self.widget['wave'] = Slider(self.wax['wave'],r'$\lambda$ (mm)',self.wavelength[0]*1.e6,self.wavelength[1]*1.e6,valinit=self.wavelength[2]*1.e6)
-    self.widget['add'] = Button(self.wax['add'],r'+ Antenna')
-    self.widget['rem'] = Button(self.wax['rem'],r'$-$ Antenna')
-    self.widget['reduce'] = Button(self.wax['reduce'],r'Reduce data')
-    self.widget['save'] = Button(self.wax['save'],'Save array')
-    self.widget['loadarr'] = Button(self.wax['loadarr'],'Load array')
-    self.widget['loadmod'] = Button(self.wax['loadmod'],'Load model')
+    self.wax['lat'] = pl.axes([0.07, 0.45, 0.25, 0.04])
+    self.wax['dec'] = pl.axes([0.07, 0.40, 0.25, 0.04])
+    self.wax['H0'] = pl.axes([0.07, 0.35, 0.25, 0.04])
+    self.wax['H1'] = pl.axes([0.07, 0.30, 0.25, 0.04])
+    self.wax['wave'] = pl.axes([0.07, 0.25, 0.25, 0.04])
+    self.wax['robust'] = pl.axes([0.07, 0.20, 0.25, 0.04])
+    self.wax['add'] = pl.axes([0.07, 0.14, 0.08, 0.05])
+    self.wax['rem'] = pl.axes([0.155, 0.14, 0.08, 0.05])
+    self.wax['reduce'] = pl.axes([0.24, 0.14, 0.08, 0.05])
+    self.wax['save'] =  pl.axes([0.07, 0.08, 0.08, 0.05]) 
+    self.wax['loadarr']=pl.axes([0.155, 0.08, 0.08, 0.05])
+    self.wax['quit']=pl.axes([0.155, 0.02, 0.08, 0.05])
+    self.wax['loadmod']=pl.axes([0.24, 0.08, 0.08, 0.05])
+    self.wax['gammacorr']=pl.axes([0.46, 0.08, 0.13, 0.02], axisbg='white')
+    self.wax['diameter']=pl.axes([0.825, 0.08, 0.10, 0.02], axisbg='white')
+    self.wax['subarrwgt']=pl.axes([0.15, 0.58, 0.12, 0.02], axisbg='white')
+    self.widget['robust'] = Slider(self.wax['robust'], r'Robust',
+                                   -2., 2., valinit=0.0)
+    self.widget['lat'] = Slider(self.wax['lat'], r'Lat (deg)',
+                                -90., 90., valinit=self.lat / self.deg2rad)
+    self.widget['dec'] = Slider(self.wax['dec'], r'Dec (deg)',
+                                -90., 90., valinit=self.dec / self.deg2rad)
+    self.widget['H0'] = Slider(self.wax['H0'], r'H$_{0}$ (h)',
+                               -12., 12., valinit=self.Hcov[0] / self.Hfac)
+    self.widget['H1'] = Slider(self.wax['H1'], r'H$_{1}$ (h)',
+                               -12., 12., valinit=self.Hcov[1] / self.Hfac)
+    self.widget['wave'] = Slider(self.wax['wave'], r'$\lambda$ (mm)',
+                                 self.wavelength[0]*1.e6,
+                                 self.wavelength[1]*1.e6,
+                                 valinit=self.wavelength[2]*1.e6)
+    self.widget['add'] = Button(self.wax['add'], r'+ Antenna')
+    self.widget['rem'] = Button(self.wax['rem'], r'$-$ Antenna')
+    self.widget['reduce'] = Button(self.wax['reduce'], r'Reduce data')
+    self.widget['save'] = Button(self.wax['save'], 'Save array')
+    self.widget['loadarr'] = Button(self.wax['loadarr'], 'Load array')
+    self.widget['loadmod'] = Button(self.wax['loadmod'], 'Load model')
     self.widget['quit'] = Button(self.wax['quit'],'Quit')
-    self.widget['gammacorr'] = Slider(self.wax['gammacorr'],'gamma',0.1,1.0,valinit=self.gamma,color='red')
+    self.widget['gammacorr'] = Slider(self.wax['gammacorr'],
+                                      'gamma',0.1, 1.0, valinit=self.gamma,
+                                      color='red')
     self.widget['gammacorr'].label.set_color('white')
     self.widget['gammacorr'].valtext.set_color('white')
 
