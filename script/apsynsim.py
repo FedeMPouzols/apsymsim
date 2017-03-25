@@ -2629,94 +2629,81 @@ class CLEANer(object):
     self.convSource = Tk.Toplevel(self.me)
     self.convSource.title("True source image")
 
-    self.figCS1 = pl.figure(figsize=(6,6))    
+    self.figCS1 = pl.figure(figsize=(6, 6))
 
-    self.CS1 = self.figCS1.add_subplot(111,aspect='equal') #pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
+    self.CS1 = self.figCS1.add_subplot(111, aspect='equal')
+    # pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
 
-    self.figCS1.subplots_adjust(left=0.05,right=0.98)
+    self.figCS1.subplots_adjust(left=0.05, right=0.98)
 
-    self.CSText = self.CS1.text(0.05,0.87,self.parent.fmtD%(0.0,0.,0.),
-         transform=self.CS1.transAxes,bbox=dict(facecolor='white', 
-         alpha=0.7))
-
+    self.CSText = self.CS1.text(0.05, 0.87,
+                                self.parent.fmtD % (0.0, 0., 0.),
+                                transform=self.CS1.transAxes,
+                                bbox=dict(facecolor='white',
+                                          alpha=0.7))
 
     self.frames = {}
     self.frames['FigCS'] = Tk.Frame(self.convSource)
     self.frames['CSFr'] = Tk.Frame(self.convSource)
 
-    self.canvasCS1 = FigureCanvasTkAgg(self.figCS1, master=self.frames['FigCS'])
+    self.canvasCS1 = FigureCanvasTkAgg(self.figCS1,
+                                       master=self.frames['FigCS'])
 
     self.canvasCS1.show()
     self.frames['FigCS'].pack(side=Tk.TOP)
     self.frames['CSFr'].pack(side=Tk.TOP)
 
-    self.buttons['reloadCS'] = Tk.Button(self.frames['CSFr'],text="Reload",command=self._CSRead)
+    self.buttons['reloadCS'] = Tk.Button(self.frames['CSFr'],
+                                         text="Reload",
+                                         command=self._CSRead)
     self.buttons['reloadCS'].pack()
 
-    self.canvasCS1.mpl_connect('pick_event', self._onCSPick)
-    self.canvasCS1.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
+    self.canvasCS1.mpl_connect('pick_event',
+                               self._onCSPick)
+    self.canvasCS1.get_tk_widget().pack(side=Tk.LEFT)
+    # , fill=Tk.BOTH, expand=1)
     toolbar_frame = Tk.Frame(self.convSource)
     toolbar = NavigationToolbar2TkAgg(self.canvasCS1, toolbar_frame)
     toolbar_frame.pack(side=Tk.LEFT)
 
     self._CSRead()
 
-
-
   def _CSRead(self):
+    self.CSImage = (np.fft.fftshift(np.fft.ifft2(
+      self.parent.modelfft*np.fft.fft2(
+        np.fft.fftshift(self.cleanBeam))))).real
 
-
-    self.CSImage = (np.fft.fftshift(np.fft.ifft2(self.parent.modelfft*np.fft.fft2(np.fft.fftshift(self.cleanBeam))))).real
-
-    self.CS1Plot = self.CS1.imshow(self.CSImage[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4],interpolation='nearest',picker=True, cmap=self.parent.currcmap)
-    modflux = self.parent.dirtymap[self.parent.Nphf,self.parent.Nphf]
-    self.CSText.set_text(self.parent.fmtD%(modflux,0.0,0.0))
+    self.CS1Plot = self.CS1.imshow(self.CSImage[self.Np4:self.parent.Npix-self.Np4,
+                                                self.Np4:self.parent.Npix-self.Np4],
+                                   interpolation='nearest', picker=True,
+                                   cmap=self.parent.currcmap)
+    modflux = self.parent.dirtymap[self.parent.Nphf, self.parent.Nphf]
+    self.CSText.set_text(self.parent.fmtD % (modflux, 0.0, 0.0))
  #        transform=self.CS1.transAxes,bbox=dict(facecolor='white', alpha=0.7))
-    pl.setp(self.CS1Plot, extent=(self.Xaxmax/2.,-self.Xaxmax/2.,-self.Xaxmax/2.,self.Xaxmax/2.))
-
+    pl.setp(self.CS1Plot, extent=(self.Xaxmax/2.,
+                                  -self.Xaxmax/2.,
+                                  -self.Xaxmax/2.,
+                                  self.Xaxmax/2.))
 
     self.CS1.set_xlabel('RA offset (as)')
     self.CS1.set_ylabel('Dec offset (as)')
 
     self.CS1.set_title('TRUE SOURCE - CONVOLVED')
 
-    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.residuals))))
+    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(
+      np.fft.fftshift(self.residuals))))
 
     self.canvasCS1.draw()
 
-
-
-
-
-
-
-
-
-
-
-  def _onCSPick(self,event):
-  
-
+  def _onCSPick(self, event):
      RA = event.mouseevent.xdata
      Dec = event.mouseevent.ydata
      yi = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.parent.Npix)
      xi = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.parent.Npix)
-     Flux = self.CSImage[xi,yi]
-     self.CSText.set_text(self.parent.fmtD%(Flux,RA,Dec))
+     Flux = self.CSImage[xi, yi]
+     self.CSText.set_text(self.parent.fmtD % (Flux, RA, Dec))
 
      self.canvasCS1.draw()
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class UVPLOTTER2(object):
@@ -2724,7 +2711,7 @@ class UVPLOTTER2(object):
   def quit(self):
     self.FFTwin.destroy()
 
-  def __init__(self,parent):
+  def __init__(self, parent):
 
     self.parent = parent
 
@@ -2735,47 +2722,59 @@ class UVPLOTTER2(object):
     menubar.add_command(label="Quit", command=self.quit)
     self.FFTwin.config(menu=menubar)
 
-    self.figUV1 = pl.figure(figsize=(10,4))    
+    self.figUV1 = pl.figure(figsize=(10, 4))
 
-    self.UVPSF = self.figUV1.add_subplot(131,aspect='equal')
+    self.UVPSF = self.figUV1.add_subplot(131, aspect='equal')
 
-    self.UVOBS = self.figUV1.add_subplot(132,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal')
-    pl.setp(self.UVOBS.get_yticklabels(),visible=False)
+    self.UVOBS = self.figUV1.add_subplot(132, sharex=self.UVPSF,
+                                         sharey=self.UVPSF,
+                                         aspect='equal')
+    pl.setp(self.UVOBS.get_yticklabels(), visible=False)
 
-    self.UVSOURCE = self.figUV1.add_subplot(133,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal')
-    pl.setp(self.UVSOURCE.get_yticklabels(),visible=False)
+    self.UVSOURCE = self.figUV1.add_subplot(133,
+                                            sharex=self.UVPSF,
+                                            sharey=self.UVPSF,
+                                            aspect='equal')
+    pl.setp(self.UVSOURCE.get_yticklabels(), visible=False)
 
-    self.figUV1.subplots_adjust(left=0.1,right=0.98,top=0.90,bottom=0.15,wspace=0.02,hspace=0.15)
+    self.figUV1.subplots_adjust(left=0.1, right=0.98,
+                                top=0.90, bottom=0.15,
+                                wspace=0.02, hspace=0.15)
 
     self.UVfmt = '%.2e Jy'
     self.PSFfmt = '%.2e'
 
-    self.PSFText = self.UVPSF.text(0.05,0.87,self.PSFfmt%(0.0),
-         transform=self.UVPSF.transAxes,bbox=dict(facecolor='white', 
-         alpha=0.7))
+    self.PSFText = self.UVPSF.text(0.05, 0.87, self.PSFfmt % (0.0),
+                                   transform=self.UVPSF.transAxes,
+                                   bbox=dict(facecolor='white',
+                                             alpha=0.7))
 
-    self.UVSOURCEText = self.UVSOURCE.text(0.05,0.87,self.UVfmt%(0.0),
-         transform=self.UVSOURCE.transAxes,bbox=dict(facecolor='white', 
-         alpha=0.7))
+    self.UVSOURCEText = self.UVSOURCE.text(0.05, 0.87,
+                                           self.UVfmt % (0.0),
+                                           transform=self.UVSOURCE.transAxes,
+                                           bbox=dict(facecolor='white',
+                                                     alpha=0.7))
 
-    self.UVOBSText = self.UVOBS.text(0.05,0.87,self.UVfmt%(0.0),
-         transform=self.UVOBS.transAxes,bbox=dict(facecolor='white', 
-         alpha=0.7))
-
-
+    self.UVOBSText = self.UVOBS.text(0.05, 0.87, self.UVfmt % (0.0),
+                                     transform=self.UVOBS.transAxes,
+                                     bbox=dict(facecolor='white',
+                                               alpha=0.7))
 
     self.frames = {}
     self.frames['FigUV'] = Tk.Frame(self.FFTwin)
     self.frames['BFr'] = Tk.Frame(self.FFTwin)
 
-    self.canvasUV1 = FigureCanvasTkAgg(self.figUV1, master=self.frames['FigUV'])
+    self.canvasUV1 = FigureCanvasTkAgg(self.figUV1,
+                                       master=self.frames['FigUV'])
 
     self.canvasUV1.show()
     self.frames['FigUV'].pack(side=Tk.TOP)
     self.frames['BFr'].pack(side=Tk.TOP)
 
     self.buttons = {}
-    self.buttons['reload'] = Tk.Button(self.frames['BFr'],text="Reload",command=self._FFTRead)
+    self.buttons['reload'] = Tk.Button(self.frames['BFr'],
+                                       text="Reload",
+                                       command=self._FFTRead)
     self.buttons['reload'].pack()
 
     self.canvasUV1.mpl_connect('pick_event', self._onUVPick)
@@ -2788,104 +2787,92 @@ class UVPLOTTER2(object):
 
   def _FFTRead(self):
 
-    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.parent.beam))))
+    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(
+      np.fft.fftshift(self.parent.beam))))
 
     vmax = np.max(Toplot)
     vmin = np.min(Toplot)
 
-    self.UVPSFPlot = self.UVPSF.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
-    pl.setp(self.UVPSFPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+    self.UVPSFPlot = self.UVPSF.imshow(Toplot, vmin=0.0, vmax=vmax,
+                                       cmap=self.parent.currcmap,
+                                       picker=True, interpolation='nearest')
+    pl.setp(self.UVPSFPlot,
+            extent=(-self.parent.UVmax + self.parent.UVSh,
+                    self.parent.UVmax + self.parent.UVSh,
+                    -self.parent.UVmax - self.parent.UVSh,
+                    self.parent.UVmax - self.parent.UVSh))
     self.UVPSF.set_ylabel(self.parent.vlab)
 
     self.UVPSF.set_title('UV - PSF')
 
-    
-    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.parent.dirtymap))))
+    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(
+      np.fft.fftshift(self.parent.dirtymap))))
 
     vmax = np.max(Toplot)
     vmin = 0.0
 
-    self.UVOBSPlot = self.UVOBS.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
-    pl.setp(self.UVOBSPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+    self.UVOBSPlot = self.UVOBS.imshow(Toplot, vmin=0.0, vmax=vmax,
+                                       cmap=self.parent.currcmap,
+                                       picker=True,
+                                       interpolation='nearest')
+    pl.setp(self.UVOBSPlot,
+            extent=(-self.parent.UVmax + self.parent.UVSh,
+                    self.parent.UVmax + self.parent.UVSh,
+                    -self.parent.UVmax - self.parent.UVSh,
+                    self.parent.UVmax - self.parent.UVSh))
     self.UVSOURCE.set_xlabel(self.parent.ulab)
-  #  self.UVSOURCE.set_ylabel(self.parent.vlab)
+    # self.UVSOURCE.set_ylabel(self.parent.vlab)
 
     self.UVOBS.set_title('UV - OBSERV.')
 
-
-    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.parent.modelimTrue))))
+    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(
+      np.fft.fftshift(self.parent.modelimTrue))))
 
     vmax = np.max(Toplot)
     vmin = 0.0
 
-    self.UVSOURCEPlot = self.UVSOURCE.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
-    pl.setp(self.UVSOURCEPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+    self.UVSOURCEPlot = self.UVSOURCE.imshow(Toplot, vmin=0.0, vmax=vmax,
+                                             cmap=self.parent.currcmap,
+                                             picker=True,
+                                             interpolation='nearest')
+    pl.setp(self.UVSOURCEPlot,
+            extent=(-self.parent.UVmax + self.parent.UVSh,
+                    self.parent.UVmax + self.parent.UVSh,
+                    -self.parent.UVmax - self.parent.UVSh,
+                    self.parent.UVmax - self.parent.UVSh))
     self.UVSOURCE.set_xlabel(self.parent.ulab)
-  #  self.UVSOURCE.set_ylabel(self.parent.vlab)
+    # self.UVSOURCE.set_ylabel(self.parent.vlab)
 
     self.UVSOURCE.set_title('UV - SOURCE')
 
-
-
-
-
     self.canvasUV1.draw()
 
+  def _onUVPick(self, event):
 
-  def _onUVPick(self,event):
-   
-    Up = event.mouseevent.xdata-self.parent.UVSh
-    Vp = event.mouseevent.ydata+self.parent.UVSh
+    Up = event.mouseevent.xdata - self.parent.UVSh
+    Vp = event.mouseevent.ydata + self.parent.UVSh
 
     yi = np.floor((self.parent.UVmax+Up)/(self.parent.UVmax)*self.parent.Npix/2.)
     xi = np.floor((self.parent.UVmax-Vp)/(self.parent.UVmax)*self.parent.Npix/2.)
 
-
-    if xi>0 and yi> 0 and xi<self.parent.Npix and yi< self.parent.Npix:
-      self.PSFText.set_text(self.PSFfmt%self.UVPSFPlot.get_array()[xi,yi])
-      self.UVSOURCEText.set_text(self.UVfmt%self.UVSOURCEPlot.get_array()[xi,yi])
-      self.UVOBSText.set_text(self.UVfmt%self.UVOBSPlot.get_array()[xi,yi])
+    if xi > 0 and yi > 0 and xi < self.parent.Npix and yi < self.parent.Npix:
+      self.PSFText.set_text(self.PSFfmt % self.UVPSFPlot.get_array()[xi, yi])
+      self.UVSOURCEText.set_text(self.UVfmt % self.UVSOURCEPlot.get_array()[xi, yi])
+      self.UVOBSText.set_text(self.UVfmt % self.UVOBSPlot.get_array()[xi, yi])
     else:
-      self.PSFText.set_text(self.PSFfmt%0.0)
-      self.UVSOURCEText.set_text(self.UVfmt%0.0)
-      self.UVOBSText.set_text(self.UVfmt%0.0)
-
+      self.PSFText.set_text(self.PSFfmt % 0.0)
+      self.UVSOURCEText.set_text(self.UVfmt % 0.0)
+      self.UVOBSText.set_text(self.UVfmt % 0.0)
 
     self.canvasUV1.draw()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class UVPLOTTER(object):
-
 
   def quit(self):
     self.FFTwin.destroy()
 
-
-
-  def __init__(self,parent):
+  def __init__(self, parent):
 
     self.parent = parent
 
@@ -2896,54 +2883,66 @@ class UVPLOTTER(object):
     menubar.add_command(label="Quit", command=self.quit)
     self.FFTwin.config(menu=menubar)
 
-    self.figUV1 = pl.figure(figsize=(8.5,7))    
+    self.figUV1 = pl.figure(figsize=(8.5, 7))
 
-    self.UVPSF = self.figUV1.add_subplot(231,aspect='equal')
-    pl.setp(self.UVPSF.get_xticklabels(),visible=False)
-    self.UVCLEANMOD = self.figUV1.add_subplot(232,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal')
-    pl.setp(self.UVCLEANMOD.get_xticklabels(),visible=False)
-    pl.setp(self.UVCLEANMOD.get_yticklabels(),visible=False)
+    self.UVPSF = self.figUV1.add_subplot(231, aspect='equal')
+    pl.setp(self.UVPSF.get_xticklabels(), visible=False)
+    self.UVCLEANMOD = self.figUV1.add_subplot(
+      232, sharex=self.UVPSF, sharey=self.UVPSF, aspect='equal')
+    pl.setp(self.UVCLEANMOD.get_xticklabels(), visible=False)
+    pl.setp(self.UVCLEANMOD.get_yticklabels(), visible=False)
 
-    self.UVResid = self.figUV1.add_subplot(234,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal')
-    self.UVCLEAN = self.figUV1.add_subplot(235,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal')
-    pl.setp(self.UVCLEAN.get_yticklabels(),visible=False)
+    self.UVResid = self.figUV1.add_subplot(
+      234, sharex=self.UVPSF, sharey=self.UVPSF, aspect='equal')
+    self.UVCLEAN = self.figUV1.add_subplot(
+      235, sharex=self.UVPSF, sharey=self.UVPSF, aspect='equal')
+    pl.setp(self.UVCLEAN.get_yticklabels(), visible=False)
 
-    self.UVSOURCE = self.figUV1.add_subplot(233,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal')
-    pl.setp(self.UVSOURCE.get_xticklabels(),visible=False)
-    pl.setp(self.UVSOURCE.get_yticklabels(),visible=False)
+    self.UVSOURCE = self.figUV1.add_subplot(
+      233, sharex=self.UVPSF, sharey=self.UVPSF, aspect='equal')
+    pl.setp(self.UVSOURCE.get_xticklabels(), visible=False)
+    pl.setp(self.UVSOURCE.get_yticklabels(), visible=False)
 
-    self.UVSOURCECONV = self.figUV1.add_subplot(236,sharex=self.UVPSF,sharey=self.UVPSF,aspect='equal')
-    pl.setp(self.UVSOURCECONV.get_yticklabels(),visible=False)
+    self.UVSOURCECONV = self.figUV1.add_subplot(
+      236, sharex=self.UVPSF, sharey=self.UVPSF, aspect='equal')
+    pl.setp(self.UVSOURCECONV.get_yticklabels(), visible=False)
 
-    self.figUV1.subplots_adjust(left=0.1,right=0.98,top=0.90,bottom=0.15,wspace=0.02,hspace=0.15)
+    self.figUV1.subplots_adjust(left=0.1, right=0.98,
+                                top=0.90, bottom=0.15,
+                                wspace=0.02, hspace=0.15)
 
     self.UVfmt = '%.2e Jy'
     self.PSFfmt = '%.2e'
 
-    self.PSFText = self.UVPSF.text(0.05,0.87,self.PSFfmt%(0.0),
-         transform=self.UVPSF.transAxes,bbox=dict(facecolor='white', 
-         alpha=0.7))
+    self.PSFText = self.UVPSF.text(0.05, 0.87, self.PSFfmt % (0.0),
+                                   transform=self.UVPSF.transAxes,
+                                   bbox=dict(facecolor='white',
+                                             alpha=0.7))
 
-    self.ResidText = self.UVResid.text(0.05,0.87,self.UVfmt%(0.0),
-         transform=self.UVResid.transAxes,bbox=dict(facecolor='white', 
-         alpha=0.7))
+    self.ResidText = self.UVResid.text(0.05, 0.87, self.UVfmt % (0.0),
+                                       transform=self.UVResid.transAxes,
+                                       bbox=dict(facecolor='white',
+                                                 alpha=0.7))
 
-    self.CLEANText = self.UVCLEAN.text(0.05,0.87,self.UVfmt%(0.0),
-         transform=self.UVCLEAN.transAxes,bbox=dict(facecolor='white', 
-         alpha=0.7))
+    self.CLEANText = self.UVCLEAN.text(0.05, 0.87, self.UVfmt % (0.0),
+                                       transform=self.UVCLEAN.transAxes,
+                                       bbox=dict(facecolor='white',
+                                                 alpha=0.7))
 
-    self.CLEANMODText = self.UVCLEANMOD.text(0.05,0.87,self.UVfmt%(0.0),
-         transform=self.UVCLEANMOD.transAxes,bbox=dict(facecolor='white', 
-         alpha=0.7))
+    self.CLEANMODText = self.UVCLEANMOD.text(0.05, 0.87, self.UVfmt % (0.0),
+                                             transform=self.UVCLEANMOD.transAxes,
+                                             bbox=dict(facecolor='white',
+                                                       alpha=0.7))
 
-    self.UVSOURCEText = self.UVSOURCE.text(0.05,0.87,self.UVfmt%(0.0),
-         transform=self.UVSOURCE.transAxes,bbox=dict(facecolor='white', 
-         alpha=0.7))
+    self.UVSOURCEText = self.UVSOURCE.text(0.05, 0.87, self.UVfmt % (0.0),
+                                           transform=self.UVSOURCE.transAxes,
+                                           bbox=dict(facecolor='white',
+                                                     alpha=0.7))
 
-    self.UVSOURCECONVText = self.UVSOURCECONV.text(0.05,0.87,self.UVfmt%(0.0),
-         transform=self.UVSOURCECONV.transAxes,bbox=dict(facecolor='white', 
-         alpha=0.7))
-
+    self.UVSOURCECONVText = self.UVSOURCECONV.text(0.05, 0.87, self.UVfmt % (0.0),
+                                                   transform=self.UVSOURCECONV.transAxes,
+                                                   bbox=dict(facecolor='white',
+                                                             alpha=0.7))
 
     self.frames = {}
     self.frames['FigUV'] = Tk.Frame(self.FFTwin)
@@ -2956,128 +2955,162 @@ class UVPLOTTER(object):
     self.frames['BFr'].pack(side=Tk.TOP)
 
     self.buttons = {}
-    self.buttons['reload'] = Tk.Button(self.frames['BFr'],text="Reload",command=self._FFTRead)
+    self.buttons['reload'] = Tk.Button(self.frames['BFr'], text="Reload",
+                                       command=self._FFTRead)
     self.buttons['reload'].pack()
 
     self.canvasUV1.mpl_connect('pick_event', self._onUVPick)
-    self.canvasUV1.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
+    self.canvasUV1.get_tk_widget().pack(side=Tk.LEFT)  # , fill=Tk.BOTH, expand=1)
     toolbar_frame = Tk.Frame(self.FFTwin)
     toolbar = NavigationToolbar2TkAgg(self.canvasUV1, toolbar_frame)
     toolbar_frame.pack(side=Tk.LEFT)
 
     self._FFTRead()
 
-
-
   def _FFTRead(self):
 
-    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.parent.beam))))
+    Toplot = np.abs(np.fft.fftshift(
+      np.fft.fft2(np.fft.fftshift(self.parent.beam))))
 
     vmax = np.max(Toplot)
     vmin = np.min(Toplot)
 
-    self.UVPSFPlot = self.UVPSF.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
-    pl.setp(self.UVPSFPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+    self.UVPSFPlot = self.UVPSF.imshow(Toplot, vmin=0.0, vmax=vmax,
+                                       cmap=self.parent.currcmap,
+                                       picker=True, interpolation='nearest')
+    pl.setp(self.UVPSFPlot,
+            extent=(-self.parent.UVmax + self.parent.UVSh,
+                    self.parent.UVmax + self.parent.UVSh,
+                    -self.parent.UVmax - self.parent.UVSh,
+                    self.parent.UVmax - self.parent.UVSh))
     self.UVPSF.set_ylabel(self.parent.vlab)
 
     self.UVPSF.set_title('UV - PSF')
 
     try:
-      Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.parent.myCLEAN.residuals))))
+      Toplot = np.abs(np.fft.fftshift(
+        np.fft.fft2(np.fft.fftshift(self.parent.myCLEAN.residuals))))
     except:
       Toplot = np.zeros(np.shape(self.parent.beam))
 
     vmax = np.max(np.abs(np.fft.fft2(self.parent.dirtymap)))
     vmin = 0.0
 
-    self.UVResidPlot = self.UVResid.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
-    pl.setp(self.UVResidPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+    self.UVResidPlot = self.UVResid.imshow(Toplot, vmin=0.0, vmax=vmax,
+                                           cmap=self.parent.
+                                           currcmap, picker=True,
+                                           interpolation='nearest')
+    pl.setp(self.UVResidPlot,
+            extent=(-self.parent.UVmax + self.parent.UVSh,
+                    self.parent.UVmax + self.parent.UVSh,
+                    -self.parent.UVmax - self.parent.UVSh,
+                    self.parent.UVmax - self.parent.UVSh))
     self.UVResid.set_xlabel(self.parent.ulab)
     self.UVResid.set_ylabel(self.parent.vlab)
 
     self.UVResid.set_title('UV - RESIDUALS (REST.)')
 
     try:
-      Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.parent.myCLEAN.cleanmod))))
+      Toplot = np.abs(np.fft.fftshift(
+        np.fft.fft2(np.fft.fftshift(self.parent.myCLEAN.cleanmod))))
     except:
       Toplot = np.zeros(np.shape(self.parent.beam))
 
-
     vmax = np.max(Toplot)
 
-    self.UVCLEANPlot = self.UVCLEAN.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
-    pl.setp(self.UVCLEANPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+    self.UVCLEANPlot = self.UVCLEAN.imshow(Toplot, vmin=0.0, vmax=vmax,
+                                           cmap=self.parent.currcmap,
+                                           picker=True,
+                                           interpolation='nearest')
+    pl.setp(self.UVCLEANPlot,
+            extent=(-self.parent.UVmax + self.parent.UVSh,
+                    self.parent.UVmax + self.parent.UVSh,
+                    -self.parent.UVmax - self.parent.UVSh,
+                    self.parent.UVmax - self.parent.UVSh))
     self.UVCLEAN.set_xlabel(self.parent.ulab)
 
     self.UVCLEAN.set_title('UV - CLEAN (REST.)')
 
     try:
-      Toplot = np.abs(np.fft.fftshift(np.fft.fft2(np.fft.fftshift(self.parent.myCLEAN.cleanmodd))))
+      Toplot = np.abs(np.fft.fftshift(
+        np.fft.fft2(np.fft.fftshift(self.parent.myCLEAN.cleanmodd))))
     except:
       Toplot = np.zeros(np.shape(self.parent.beam))
 
     vmax = np.max(Toplot)
 
-
-    self.UVCLEANMODPlot = self.UVCLEANMOD.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
-    pl.setp(self.UVCLEANMODPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+    self.UVCLEANMODPlot = self.UVCLEANMOD.imshow(Toplot, vmin=0.0, vmax=vmax,
+                                                 cmap=self.parent.currcmap,
+                                                 picker=True,
+                                                 interpolation='nearest')
+    pl.setp(self.UVCLEANMODPlot,
+            extent=(-self.parent.UVmax + self.parent.UVSh,
+                    self.parent.UVmax + self.parent.UVSh,
+                    -self.parent.UVmax - self.parent.UVSh,
+                    self.parent.UVmax - self.parent.UVSh))
 
     self.UVCLEANMOD.set_title('UV - CLEAN (MODEL)')
 
-
     try:
-      Toplot = np.fft.fftshift(np.abs(self.parent.modelfft*np.fft.fft2(self.parent.myCLEAN.cleanBeam)))
+      Toplot = np.fft.fftshift(np.abs(
+        self.parent.modelfft*np.fft.fft2(self.parent.myCLEAN.cleanBeam)))
     except:
       Toplot = np.zeros(np.shape(self.parent.beam))
 
-
     vmax = np.max(Toplot)
 
-    self.UVSOURCECONVPlot = self.UVSOURCECONV.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
-    pl.setp(self.UVSOURCECONVPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+    self.UVSOURCECONVPlot = self.UVSOURCECONV.imshow(Toplot, vmin=0.0, vmax=vmax,
+                                                     cmap=self.parent.currcmap,
+                                                     picker=True,
+                                                     interpolation='nearest')
+    pl.setp(self.UVSOURCECONVPlot,
+            extent=(-self.parent.UVmax+self.parent.UVSh,
+                    self.parent.UVmax+self.parent.UVSh,
+                    -self.parent.UVmax-self.parent.UVSh,
+                    self.parent.UVmax-self.parent.UVSh))
 
     self.UVSOURCECONV.set_title('UV - SOURCE (REST.)')
-
-
 
     Toplot = np.fft.fftshift(np.abs(self.parent.modelfft))
 
     vmax = np.max(Toplot)
 
-    self.UVSOURCEPlot = self.UVSOURCE.imshow(Toplot,vmin=0.0,vmax=vmax,cmap=self.parent.currcmap,picker=True,interpolation='nearest')
-    pl.setp(self.UVSOURCEPlot, extent=(-self.parent.UVmax+self.parent.UVSh,self.parent.UVmax+self.parent.UVSh,-self.parent.UVmax-self.parent.UVSh,self.parent.UVmax-self.parent.UVSh))
+    self.UVSOURCEPlot = self.UVSOURCE.imshow(Toplot, vmin=0.0, vmax=vmax,
+                                             cmap=self.parent.currcmap,
+                                             picker=True,
+                                             interpolation='nearest')
+    pl.setp(self.UVSOURCEPlot,
+            extent=(-self.parent.UVmax + self.parent.UVSh,
+                    self.parent.UVmax + self.parent.UVSh,
+                    -self.parent.UVmax - self.parent.UVSh,
+                    self.parent.UVmax - self.parent.UVSh))
 
     self.UVSOURCE.set_title('UV - SOURCE')
 
-
-
-
     self.canvasUV1.draw()
 
-
-  def _onUVPick(self,event):
+  def _onUVPick(self, event):
    
-    Up = event.mouseevent.xdata-self.parent.UVSh
-    Vp = event.mouseevent.ydata+self.parent.UVSh
+    Up = event.mouseevent.xdata - self.parent.UVSh
+    Vp = event.mouseevent.ydata + self.parent.UVSh
 
     yi = np.floor((self.parent.UVmax+Up)/(self.parent.UVmax)*self.parent.Npix/2.)
     xi = np.floor((self.parent.UVmax-Vp)/(self.parent.UVmax)*self.parent.Npix/2.)
 
-
-    if xi>0 and yi> 0 and xi<self.parent.Npix and yi< self.parent.Npix:
-      self.PSFText.set_text(self.PSFfmt%self.UVPSFPlot.get_array()[xi,yi])
-      self.ResidText.set_text(self.UVfmt%self.UVResidPlot.get_array()[xi,yi])
-      self.CLEANText.set_text(self.UVfmt%self.UVCLEANPlot.get_array()[xi,yi])
-      self.CLEANMODText.set_text(self.UVfmt%self.UVCLEANMODPlot.get_array()[xi,yi])
-      self.UVSOURCEText.set_text(self.UVfmt%self.UVSOURCEPlot.get_array()[xi,yi])
-      self.UVSOURCECONVText.set_text(self.UVfmt%self.UVSOURCECONVPlot.get_array()[xi,yi])
+    if xi > 0 and yi > 0 and xi < self.parent.Npix and yi < self.parent.Npix:
+      self.PSFText.set_text(self.PSFfmt % self.UVPSFPlot.get_array()[xi, yi])
+      self.ResidText.set_text(self.UVfmt % self.UVResidPlot.get_array()[xi, yi])
+      self.CLEANText.set_text(self.UVfmt % self.UVCLEANPlot.get_array()[xi, yi])
+      self.CLEANMODText.set_text(self.UVfmt % self.UVCLEANMODPlot.get_array()[xi, yi])
+      self.UVSOURCEText.set_text(self.UVfmt % self.UVSOURCEPlot.get_array()[xi, yi])
+      self.UVSOURCECONVText.set_text(self.UVfmt % self.UVSOURCECONVPlot.get_array()[xi, yi])
     else:
-      self.PSFText.set_text(self.PSFfmt%0.0)
-      self.ResidText.set_text(self.UVfmt%0.0)
-      self.CLEANText.set_text(self.UVfmt%0.0)
-      self.CLEANMODText.set_text(self.UVfmt%0.0)
-      self.UVSOURCEText.set_text(self.UVfmt%0.0)
-      self.UVSOURCECONVText.set_text(self.UVfmt%0.0)
+      self.PSFText.set_text(self.PSFfmt % 0.0)
+      self.ResidText.set_text(self.UVfmt % 0.0)
+      self.CLEANText.set_text(self.UVfmt % 0.0)
+      self.CLEANMODText.set_text(self.UVfmt % 0.0)
+      self.UVSOURCEText.set_text(self.UVfmt % 0.0)
+      self.UVSOURCECONVText.set_text(self.UVfmt % 0.0)
 
     self.canvasUV1.draw()
 
@@ -3085,10 +3118,9 @@ class UVPLOTTER(object):
 if __name__ == "__main__":
 
   root = Tk.Tk()
-  TITLE = 'Aperture Synthesis Simulator (I. Marti-Vidal, Onsala Space Observatory) - version  %s'%__version__
+  TITLE = ('Aperture Synthesis Simulator (I. Marti-Vidal, '
+           'Onsala Space Observatory) - version  %s' % __version__)
   root.wm_title(TITLE)
-
 
   myint = Interferometer(tkroot=root)
   Tk.mainloop()
-
