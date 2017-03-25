@@ -18,8 +18,8 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 #############################################################################
+from __future__ import (absolute_import, division, print_function)
 
-import FileDialog
 import numpy as np
 import pylab as pl
 import os
@@ -33,9 +33,6 @@ import matplotlib as mpl
 from matplotlib.widgets import Slider, Button
 import matplotlib.cm as cm
 import matplotlib.image as plimg
-from matplotlib.backend_bases import NavigationToolbar2
-from mpl_toolkits.mplot3d import Axes3D
-
 
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2TkAgg)
@@ -49,7 +46,7 @@ from tkMessageBox import showinfo
 
 mpl.use('TkAgg')
 
-__version__ = '1.4-b'
+__version__ = '2.0-b'
 
 
 __help_text__ = """
@@ -226,12 +223,12 @@ class Interferometer(object):
 # Default of defaults!
     nH = 200
     Npix = 512   # Image pixel size. Must be a power of 2
-    DefaultMod = 'Nebula.model'
+    DefaultModel = 'Nebula.model'
     DefaultArray = 'Long_Golay_12.array'
 
 # Overwrite defaults from config file:
     d1 = os.path.dirname(os.path.realpath(__file__))
-    print d1
+    print(d1)
 
 #   execfile(os.path.join(os.path.basename(d1),'apsynsim.config'))
     try:
@@ -337,7 +334,6 @@ class Interferometer(object):
                                                        cstride=4, color=(0.8, 0.8, 1.0))
     self.spherePlot._axis3don = False
     self.spherePlot.patch.set_alpha(0.8)
-    beta = np.zeros(100)
     self.arrayPath = [np.zeros(self.nH), np.zeros(self.nH), np.zeros(self.nH)]
     self.sphereArray = self.spherePlot.plot([], [], [], 'y', linewidth=3)
     self.spherePlot.set_xlim3d((-6, 6))
@@ -569,7 +565,6 @@ class Interferometer(object):
           self.Hcov[1] = Hhor
 
       self.Hmax = Hhor
-      H = np.linspace(self.Hcov[0], self.Hcov[1], self.nH)[np.newaxis, :]
       self.Xmax = Xmax*1.5
       fi.close()
 
@@ -1345,8 +1340,6 @@ class Interferometer(object):
 
   def _onPick(self, event):
 
-   onBase = False
-
    if event.mouseevent.inaxes == self.UVPlot:
 
      Up = event.mouseevent.xdata - self.UVSh
@@ -1359,7 +1352,6 @@ class Interferometer(object):
      self.visText.set_text(newtext)
 
      if event.artist in self.UVPlotPlot:
-       onBase = True
        idata = np.unravel_index(event.ind, self.ravelDims)
        if event.artist == self.UVPlotPlot[0]:
           n1, n2 = self.antnum[idata[0][0]]
@@ -1375,7 +1367,6 @@ class Interferometer(object):
                                   self.antPos[n2][1]]])
 
      elif self.Nant2 > 1 and event.artist in self.UVPlotPlot2:
-       onBase = True
        idata = np.unravel_index(event.ind, self.ravelDims2)
        if event.artist == self.UVPlotPlot2[0]:
           n1, n2 = self.antnum2[idata[0][0]]
@@ -1394,7 +1385,7 @@ class Interferometer(object):
      self.canvas.draw()
      return
 
-   #    self.antPlotBas.set_data([[0],[0]])
+   #  self.antPlotBas.set_data([[0],[0]])
    #  pl.draw()
    #  self.canvas.draw()
 
@@ -1487,7 +1478,7 @@ class Interferometer(object):
 # Drag the sphere plot (to change source position)
      if self._onSphere:
        oldDec = self.dec/self.deg2rad
-       newDec, newH0 = self.spherePlot.elev, self.spherePlot.azim
+       newDec, _newH0 = self.spherePlot.elev, self.spherePlot.azim
 
    # Limits on declination:
        if np.abs(newDec) > 90.:
@@ -1645,7 +1636,7 @@ class Interferometer(object):
     if event.key == 'u' or event.key == 'U':
       if self.tks is not None:
         self.myUVPLOT2 = UVPLOTTER2(self)
- 
+
     if event.key == 'c' or event.key == 'C':
       if self.currcmap == cm.jet:
          self.currcmap = cm.Greys_r
@@ -2289,8 +2280,6 @@ class CLEANer(object):
       self.moved = True
       RA = event.xdata
       Dec = event.ydata
-      y1 = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.parent.Npix)
-      x1 = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.parent.Npix)
       self.Box.set_data([self.xydata[0], self.xydata[0], RA, RA,
                          self.xydata[0]], [self.xydata[1], Dec, Dec,
                                            self.xydata[1],
@@ -2335,8 +2324,6 @@ class CLEANer(object):
     self._reset()
 
   def _reset(self, donoise=False):
-
-    extr = [np.min(self.parent.dirtymap), np.max(self.parent.dirtymap)]
 
     self.ResidPlot.cla()
     self.dorestore = True
@@ -2663,7 +2650,7 @@ class CLEANer(object):
     self.canvasCS1.get_tk_widget().pack(side=Tk.LEFT)
     # , fill=Tk.BOTH, expand=1)
     toolbar_frame = Tk.Frame(self.convSource)
-    toolbar = NavigationToolbar2TkAgg(self.canvasCS1, toolbar_frame)
+    _toolbar = NavigationToolbar2TkAgg(self.canvasCS1, toolbar_frame)
     toolbar_frame.pack(side=Tk.LEFT)
 
     self._CSRead()
@@ -2690,7 +2677,7 @@ class CLEANer(object):
 
     self.CS1.set_title('TRUE SOURCE - CONVOLVED')
 
-    Toplot = np.abs(np.fft.fftshift(np.fft.fft2(
+    _to_plot = np.abs(np.fft.fftshift(np.fft.fft2(
       np.fft.fftshift(self.residuals))))
 
     self.canvasCS1.draw()
@@ -2780,7 +2767,7 @@ class UVPLOTTER2(object):
     self.canvasUV1.mpl_connect('pick_event', self._onUVPick)
     self.canvasUV1.get_tk_widget().pack(side=Tk.LEFT)
     toolbar_frame = Tk.Frame(self.FFTwin)
-    toolbar = NavigationToolbar2TkAgg(self.canvasUV1, toolbar_frame)
+    _toolbar = NavigationToolbar2TkAgg(self.canvasUV1, toolbar_frame)
     toolbar_frame.pack(side=Tk.LEFT)
 
     self._FFTRead()
@@ -2791,8 +2778,7 @@ class UVPLOTTER2(object):
       np.fft.fftshift(self.parent.beam))))
 
     vmax = np.max(Toplot)
-    vmin = np.min(Toplot)
-
+    _vmin = np.min(Toplot)
     self.UVPSFPlot = self.UVPSF.imshow(Toplot, vmin=0.0, vmax=vmax,
                                        cmap=self.parent.currcmap,
                                        picker=True, interpolation='nearest')
@@ -2809,8 +2795,6 @@ class UVPLOTTER2(object):
       np.fft.fftshift(self.parent.dirtymap))))
 
     vmax = np.max(Toplot)
-    vmin = 0.0
-
     self.UVOBSPlot = self.UVOBS.imshow(Toplot, vmin=0.0, vmax=vmax,
                                        cmap=self.parent.currcmap,
                                        picker=True,
@@ -2829,8 +2813,6 @@ class UVPLOTTER2(object):
       np.fft.fftshift(self.parent.modelimTrue))))
 
     vmax = np.max(Toplot)
-    vmin = 0.0
-
     self.UVSOURCEPlot = self.UVSOURCE.imshow(Toplot, vmin=0.0, vmax=vmax,
                                              cmap=self.parent.currcmap,
                                              picker=True,
@@ -2962,7 +2944,7 @@ class UVPLOTTER(object):
     self.canvasUV1.mpl_connect('pick_event', self._onUVPick)
     self.canvasUV1.get_tk_widget().pack(side=Tk.LEFT)  # , fill=Tk.BOTH, expand=1)
     toolbar_frame = Tk.Frame(self.FFTwin)
-    toolbar = NavigationToolbar2TkAgg(self.canvasUV1, toolbar_frame)
+    _toolbar = NavigationToolbar2TkAgg(self.canvasUV1, toolbar_frame)
     toolbar_frame.pack(side=Tk.LEFT)
 
     self._FFTRead()
@@ -2973,8 +2955,7 @@ class UVPLOTTER(object):
       np.fft.fft2(np.fft.fftshift(self.parent.beam))))
 
     vmax = np.max(Toplot)
-    vmin = np.min(Toplot)
-
+    _vmin = np.min(Toplot)
     self.UVPSFPlot = self.UVPSF.imshow(Toplot, vmin=0.0, vmax=vmax,
                                        cmap=self.parent.currcmap,
                                        picker=True, interpolation='nearest')
@@ -2994,8 +2975,6 @@ class UVPLOTTER(object):
       Toplot = np.zeros(np.shape(self.parent.beam))
 
     vmax = np.max(np.abs(np.fft.fft2(self.parent.dirtymap)))
-    vmin = 0.0
-
     self.UVResidPlot = self.UVResid.imshow(Toplot, vmin=0.0, vmax=vmax,
                                            cmap=self.parent.
                                            currcmap, picker=True,
@@ -3017,7 +2996,6 @@ class UVPLOTTER(object):
       Toplot = np.zeros(np.shape(self.parent.beam))
 
     vmax = np.max(Toplot)
-
     self.UVCLEANPlot = self.UVCLEAN.imshow(Toplot, vmin=0.0, vmax=vmax,
                                            cmap=self.parent.currcmap,
                                            picker=True,
@@ -3038,7 +3016,6 @@ class UVPLOTTER(object):
       Toplot = np.zeros(np.shape(self.parent.beam))
 
     vmax = np.max(Toplot)
-
     self.UVCLEANMODPlot = self.UVCLEANMOD.imshow(Toplot, vmin=0.0, vmax=vmax,
                                                  cmap=self.parent.currcmap,
                                                  picker=True,
@@ -3058,7 +3035,6 @@ class UVPLOTTER(object):
       Toplot = np.zeros(np.shape(self.parent.beam))
 
     vmax = np.max(Toplot)
-
     self.UVSOURCECONVPlot = self.UVSOURCECONV.imshow(Toplot, vmin=0.0, vmax=vmax,
                                                      cmap=self.parent.currcmap,
                                                      picker=True,
@@ -3074,7 +3050,6 @@ class UVPLOTTER(object):
     Toplot = np.fft.fftshift(np.abs(self.parent.modelfft))
 
     vmax = np.max(Toplot)
-
     self.UVSOURCEPlot = self.UVSOURCE.imshow(Toplot, vmin=0.0, vmax=vmax,
                                              cmap=self.parent.currcmap,
                                              picker=True,
