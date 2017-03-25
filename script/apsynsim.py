@@ -919,7 +919,7 @@ class Interferometer(object):
        self.Gsampling[pVi, mUi] += self.Gains[nb, gp]
        self.Gsampling[mVi, pUi] += np.conjugate(self.Gains[nb, gp])
        self.noisemap[pVi, mUi] += self.Noise[nb, gp] * gabs
-       self.noisemap[mVi, pUi] += np.conjugate(self.Noise[nb,gp]) * gabs
+       self.noisemap[mVi, pUi] += np.conjugate(self.Noise[nb, gp]) * gabs
 
    self.robfac = (5.*10.**(-self.robust))**2.*(2.*self.Nbas*self.nH)/np.sum(self.totsampling**2.)
 
@@ -1077,7 +1077,7 @@ class Interferometer(object):
 
       modflux = self.modelimTrue[self.Nphf, self.Nphf]
       self.modelText = self.modelPlot.text(0.05, 0.87,
-                                           self.fmtM%(modflux, 0.0, 0.0),
+                                           self.fmtM % (modflux, 0.0, 0.0),
                                            transform=self.modelPlot.transAxes,
                                            bbox=dict(facecolor='white', alpha=0.7))
       pl.setp(self.modelPlotPlot,
@@ -1158,18 +1158,18 @@ class Interferometer(object):
       self.dirtyPlotPlot.norm.vmin = extr[0]
       self.dirtyPlotPlot.norm.vmax = extr[1]
 
-  def _plotAntennas(self,redo=True, rescale=False):
+  def _plotAntennas(self, redo=True, rescale=False):
 
    mw = 2.*self.Xmax/self.wavelength[2]/self.lfac
    if mw < 0.1 and self.lfac == 1.e6:
       self.lfac = 1.e3
       self.ulab = r'U (k$\lambda$)'
       self.vlab = r'V (k$\lambda$)'
-   elif mw >=100. and self.lfac == 1.e3:
+   elif mw >= 100. and self.lfac == 1.e3:
       self.lfac = 1.e6
       self.ulab = r'U (M$\lambda$)'
       self.vlab = r'V (M$\lambda$)'
-   
+
    if redo:
 
     toplot = np.array(self.antPos[:self.Nant])
@@ -1180,7 +1180,7 @@ class Interferometer(object):
       pl.setp(self.wax['subarrwgt'], visible=False)
     self.antPlotBas = self.antPlot.plot([0], [0], '-b')[0]
     self.antPlotPlot = self.antPlot.plot(toplot[:, 0], toplot[:, 1],
-                                         'o',color='lime', picker=5)[0]
+                                         'o', color='lime', picker=5)[0]
     if self.Nant2 > 1:
       toplot2 = np.array(self.antPos2[:self.Nant2])
       self.antPlotPlot2 = self.antPlot.plot(toplot2[:, 0], toplot2[:, 1], 'or', picker=5)[0]
@@ -1197,9 +1197,9 @@ class Interferometer(object):
     self.UVPlotPlot = []
     toplotu = self.u.flatten()/self.lfac
     toplotv = self.v.flatten()/self.lfac
-    self.UVPlotPlot.append(self.UVPlot.plot(toplotu, toplotv,'.',
+    self.UVPlotPlot.append(self.UVPlot.plot(toplotu, toplotv, '.',
                                             color='lime', markersize=1, picker=2)[0])
-    self.UVPlotPlot.append(self.UVPlot.plot(-toplotu,-toplotv,'.',
+    self.UVPlotPlot.append(self.UVPlot.plot(-toplotu, -toplotv, '.',
                                             color='lime', markersize=1, picker=2)[0])
     if self.Nant2 > 1:
       self.UVPlotPlot2 = []
@@ -1223,18 +1223,18 @@ class Interferometer(object):
                                     transform=self.UVPlot.transAxes)
     self.latText.set_color('orange')
     self.basText = self.UVPlot.text(0.05, 0.02,
-                                    self.fmtBas % (0,0,0.0),
+                                    self.fmtBas % (0, 0, 0.0),
                                     transform=self.UVPlot.transAxes)
     self.antPlotBas.set_data([[0], [0]])
 
-    self.visText = self.UVPlot.text(0.05,0.08,
-                                    self.fmtVis % (0.0,0.0),
+    self.visText = self.UVPlot.text(0.05, 0.08,
+                                    self.fmtVis % (0.0, 0.0),
                                     transform=self.UVPlot.transAxes)
     self.visText.set_color('orange')
 
     self.basText.set_color('orange')
     self.UVPlot.set_xlabel(self.ulab)
-    self.UVPlot.set_ylabel(self.vlab) 
+    self.UVPlot.set_ylabel(self.vlab)
     self.UVPlot.set_title('UV PLANE')
 
     self.antLabelPlot = []
@@ -1242,15 +1242,15 @@ class Interferometer(object):
 
     for i in range(self.Nant):
       self.antLabelPlot.append(self.antPlot.annotate(str(i+1), textcoords='offset points',
-                                                     xy=(toplot[i,0], toplot[i,1]),
-                                                     xytext=(-7,4)))
+                                                     xy=(toplot[i, 0], toplot[i, 1]),
+                                                     xytext=(-7, 4)))
 
-    if self.Nant2>1:
+    if self.Nant2 > 1:
      for i in range(self.Nant2):
       self.antLabelPlot2.append(self.antPlot.annotate(str(i+1+self.Nant),
                                                       textcoords='offset points',
-                                                      xy=(toplot[i,0],toplot[i,1]),
-                                                      xytext=(-7,4)))
+                                                      xy=(toplot[i, 0], toplot[i, 1]),
+                                                      xytext=(-7, 4)))
 
    else:
 
@@ -1261,37 +1261,37 @@ class Interferometer(object):
                             -2.*self.Xmax/self.wavelength[2]/self.lfac))
       self.UVPlot.set_ylim((2.*self.Xmax/self.wavelength[2]/self.lfac,
                             -2.*self.Xmax/self.wavelength[2]/self.lfac))
-      self.curzoom[2] = (2.*self.Xmax/self.lfac,-2.*self.Xmax/self.lfac,
-                         2.*self.Xmax/self.lfac,-2.*self.Xmax/self.lfac)
-      self.curzoom[3] = (-self.Xmax,self.Xmax,-self.Xmax,self.Xmax)
+      self.curzoom[2] = (2.*self.Xmax/self.lfac, -2.*self.Xmax/self.lfac,
+                         2.*self.Xmax/self.lfac, -2.*self.Xmax/self.lfac)
+      self.curzoom[3] = (-self.Xmax, self.Xmax, -self.Xmax, self.Xmax)
 
     if len(self.antLabelPlot) > self.Nant:
       for i in range(self.Nant, len(self.antLabelPlot)):
          self.antLabelPlot[i].set_visible(False)
 
     toplot = np.array(self.antPos[:self.Nant])
-    self.antPlotPlot.set_data(toplot[:,0], toplot[:,1])
+    self.antPlotPlot.set_data(toplot[:, 0], toplot[:, 1])
     toplotu = self.u.flatten()/self.lfac
-    toplotv = self.v.flatten()/self.lfac ; 
+    toplotv = self.v.flatten()/self.lfac
     for i in range(self.Nant):
       if i > len(self.antLabelPlot)-1:
         self.antLabelPlot.append(self.antPlot.annotate(str(i+1),
                                                        textcoords='offset points',
-                                                       xy=(toplot[i,0],toplot[i,1]),
-                                                       xytext=(-7,4)))
+                                                       xy=(toplot[i, 0], toplot[i, 1]),
+                                                       xytext=(-7, 4)))
       else:
         self.antLabelPlot[i].set_visible(True)
-        self.antLabelPlot[i].xy = (toplot[i,0], toplot[i,1])
+        self.antLabelPlot[i].xy = (toplot[i, 0], toplot[i, 1])
     self.UVPlotPlot[0].set_data(toplotu, toplotv)
     self.UVPlotPlot[1].set_data(-toplotu, -toplotv)
 
     if self.Nant2 > 1:
      toplot = np.array(self.antPos2[:self.Nant2])
-     self.antPlotPlot2.set_data(toplot[:,0], toplot[:,1])
+     self.antPlotPlot2.set_data(toplot[:, 0], toplot[:, 1])
      toplotu = self.u2.flatten()/self.lfac
      toplotv = self.v2.flatten()/self.lfac
      for i in range(self.Nant2):
-       self.antLabelPlot2[i].xy = (toplot[i,0], toplot[i,1])
+       self.antLabelPlot2[i].xy = (toplot[i, 0], toplot[i, 1])
      self.UVPlotPlot2[0].set_data(toplotu, toplotv)
      self.UVPlotPlot2[1].set_data(-toplotu, -toplotv)
 
@@ -1303,79 +1303,92 @@ class Interferometer(object):
     Np4 = self.Npix/4
     if redo:
       self.beamPlot.cla()
-      self.beamPlotPlot = self.beamPlot.imshow(self.beam[Np4:self.Npix-Np4,Np4:self.Npix-Np4],picker=True,interpolation='nearest', cmap=self.currcmap)
-      self.beamText = self.beamPlot.text(0.05,0.80,self.fmtB%(1.0,0.0,0.0),
-           transform=self.beamPlot.transAxes,bbox=dict(facecolor='white', alpha=0.7))
+      self.beamPlotPlot = self.beamPlot.imshow(self.beam[Np4:self.Npix-Np4,
+                                                         Np4:self.Npix-Np4],
+                                               picker=True, interpolation='nearest',
+                                               cmap=self.currcmap)
+      self.beamText = self.beamPlot.text(0.05, 0.80, self.fmtB % (1.0, 0.0, 0.0),
+                                         transform=self.beamPlot.transAxes,
+                                         bbox=dict(facecolor='white', alpha=0.7))
       self.beamPlot.set_ylabel('Dec offset (as)')
       self.beamPlot.set_xlabel('RA offset (as)')
-      pl.setp(self.beamPlotPlot, extent=(self.Xaxmax/2.,-self.Xaxmax/2.,-self.Xaxmax/2.,self.Xaxmax/2.))
-      self.curzoom[0] = (self.Xaxmax/2.,-self.Xaxmax/2.,-self.Xaxmax/2.,self.Xaxmax/2.)
+      pl.setp(self.beamPlotPlot, extent=(self.Xaxmax/2.,
+                                         -self.Xaxmax/2.,
+                                         -self.Xaxmax/2.,
+                                         self.Xaxmax/2.))
+      self.curzoom[0] = (self.Xaxmax/2., -self.Xaxmax/2.,
+                         -self.Xaxmax/2., self.Xaxmax/2.)
       self.beamPlot.set_title('DIRTY BEAM')
       pl.draw()
       self.canvas.draw()
     else:
-      self.beamPlotPlot.set_data(self.beam[Np4:self.Npix-Np4,Np4:self.Npix-Np4])
-      self.beamText.set_text(self.fmtB%(1.0,0.0,0.0))
-
+      self.beamPlotPlot.set_data(self.beam[Np4:self.Npix-Np4,
+                                           Np4:self.Npix-Np4])
+      self.beamText.set_text(self.fmtB % (1.0, 0.0, 0.0))
 
     self.nptot = np.sum(self.totsampling[:])
     self.beamPlotPlot.norm.vmin = np.min(self.beam)
     self.beamPlotPlot.norm.vmax = 1.0
 
-    if np.sum(self.totsampling[self.Nphf-4:self.Nphf+4,self.Nphf-4:self.Nphf+4])==self.nptot:
-      warn = 'WARNING!\nToo short baselines for such a small image\nPLEASE, INCREASE THE IMAGE SIZE!\nAND/OR DECREASE THE WAVELENGTH'
+    if np.sum(self.totsampling[self.Nphf-4:self.Nphf+4,
+                               self.Nphf-4:self.Nphf+4]) == self.nptot:
+      warn = ('WARNING!\nToo short baselines for such a small image\n'
+              'PLEASE, INCREASE THE IMAGE SIZE!\nAND/OR DECREASE THE WAVELENGTH')
       self.beamText.set_text(warn)
 
-    self.spherePlot.view_init(elev=self.dec/self.deg2rad,azim=0)
-    self.arrayPath[0][:] = 10.*self.H[1]*np.cos(self.lat)
-    self.arrayPath[1][:] = 10.*self.H[0]*np.cos(self.lat)
+    self.spherePlot.view_init(elev=self.dec/self.deg2rad, azim=0)
+    self.arrayPath[0][:] = 10.*self.H[1] * np.cos(self.lat)
+    self.arrayPath[1][:] = 10.*self.H[0] * np.cos(self.lat)
     self.arrayPath[2][:] = 10.*np.sin(self.lat)
     self.sphereArray[0].set_data(self.arrayPath[0], self.arrayPath[1])
     self.sphereArray[0].set_3d_properties(self.arrayPath[2])
 
-
-
-  def _onPick(self,event):
+  def _onPick(self, event):
 
    onBase = False
 
    if event.mouseevent.inaxes == self.UVPlot:
 
-     Up = event.mouseevent.xdata-self.UVSh
-     Vp = event.mouseevent.ydata+self.UVSh
-     yi = np.floor((self.UVmax+Up)/(self.UVmax)*self.Npix/2.)
-     xi = np.floor((self.UVmax-Vp)/(self.UVmax)*self.Npix/2.)
-     Flux = self.FFTtoplot[xi,yi]
-     Phas, Amp = np.angle(Flux,deg=True), np.abs(Flux)
-     newtext = self.fmtVis%(Amp,Phas)
+     Up = event.mouseevent.xdata - self.UVSh
+     Vp = event.mouseevent.ydata + self.UVSh
+     yi = np.floor((self.UVmax+Up)/(self.UVmax) * self.Npix/2.)
+     xi = np.floor((self.UVmax-Vp)/(self.UVmax) * self.Npix/2.)
+     Flux = self.FFTtoplot[xi, yi]
+     Phas, Amp = np.angle(Flux, deg=True), np.abs(Flux)
+     newtext = self.fmtVis % (Amp, Phas)
      self.visText.set_text(newtext)
 
      if event.artist in self.UVPlotPlot:
        onBase = True
-       idata = np.unravel_index(event.ind,self.ravelDims)
+       idata = np.unravel_index(event.ind, self.ravelDims)
        if event.artist == self.UVPlotPlot[0]:
-          n1,n2 = self.antnum[idata[0][0]]
+          n1, n2 = self.antnum[idata[0][0]]
        else:
-          n2,n1 = self.antnum[idata[0][0]]
+          n2, n1 = self.antnum[idata[0][0]]
 
        H = self.Horig[idata[1][0]]/self.Hfac
-       newtext = self.fmtBas%(n1+1,n2+1,H)
+       newtext = self.fmtBas % (n1+1, n2+1, H)
        self.basText.set_text(newtext)
-       self.antPlotBas.set_data([[self.antPos[n1][0],self.antPos[n2][0]],[self.antPos[n1][1],self.antPos[n2][1]]])
-
+       self.antPlotBas.set_data([[self.antPos[n1][0],
+                                  self.antPos[n2][0]],
+                                 [self.antPos[n1][1],
+                                  self.antPos[n2][1]]])
 
      elif self.Nant2 > 1 and event.artist in self.UVPlotPlot2:
        onBase = True
-       idata = np.unravel_index(event.ind,self.ravelDims2)
+       idata = np.unravel_index(event.ind, self.ravelDims2)
        if event.artist == self.UVPlotPlot2[0]:
-          n1,n2 = self.antnum2[idata[0][0]]
+          n1, n2 = self.antnum2[idata[0][0]]
        else:
-          n2,n1 = self.antnum2[idata[0][0]]
+          n2, n1 = self.antnum2[idata[0][0]]
 
        H = self.Horig[idata[1][0]]/self.Hfac
-       newtext = self.fmtBas%(n1+1+self.Nant,n2+1+self.Nant,H)
+       newtext = self.fmtBas % (n1+1+self.Nant, n2+1+self.Nant, H)
        self.basText.set_text(newtext)
-       self.antPlotBas.set_data([[self.antPos2[n1][0],self.antPos2[n2][0]],[self.antPos2[n1][1],self.antPos2[n2][1]]])
+       self.antPlotBas.set_data([[self.antPos2[n1][0],
+                                  self.antPos2[n2][0]],
+                                 [self.antPos2[n1][1],
+                                  self.antPos2[n2][1]]])
 
      pl.draw()
      self.canvas.draw()
@@ -1391,8 +1404,8 @@ class Interferometer(object):
      Dec = event.mouseevent.ydata
      yi = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.Npix)
      xi = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.Npix)
-     Flux = self.beam[xi,yi]
-     self.beamText.set_text(self.fmtB%(Flux,RA,Dec))
+     Flux = self.beam[xi, yi]
+     self.beamText.set_text(self.fmtB % (Flux, RA, Dec))
      pl.draw()
      self.canvas.draw()
 
@@ -1402,8 +1415,8 @@ class Interferometer(object):
      Dec = event.mouseevent.ydata
      yi = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.Npix)
      xi = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.Npix)
-     Flux = self.dirtymap[xi,yi]
-     self.dirtyText.set_text(self.fmtD%(Flux,RA,Dec))
+     Flux = self.dirtymap[xi, yi]
+     self.dirtyText.set_text(self.fmtD % (Flux, RA, Dec))
      pl.draw()
      self.canvas.draw()
 
@@ -1413,11 +1426,10 @@ class Interferometer(object):
      Dec = event.mouseevent.ydata
      yi = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.Npix)
      xi = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.Npix)
-     Flux = self.modelimTrue[xi,yi]
-     self.modelText.set_text(self.fmtM%(Flux,RA,Dec))
+     Flux = self.modelimTrue[xi, yi]
+     self.modelText.set_text(self.fmtM % (Flux, RA, Dec))
      pl.draw()
      self.canvas.draw()
-
 
    elif event.mouseevent.inaxes == self.antPlot:
 
@@ -1427,36 +1439,44 @@ class Interferometer(object):
       self.pickSub = 1
 
 #   else:
-    if event.mouseevent.button==1 and not self.pickAnt:
+    if event.mouseevent.button == 1 and not self.pickAnt:
      self.antidx = event.ind
      if len(self.antidx) > 1:
        self.antidx = self.antidx[-1]
      self.pickAnt = True
      if self.pickSub == 0:
-       self.antText.set_text(self.fmtA%(self.Nant+self.Nant2) + self.fmtA2%(self.antidx+1) + self.fmtA3%tuple([1000*a for a in self.antPos[self.antidx]]))
+       self.antText.set_text(self.fmtA % (self.Nant+self.Nant2) +
+                             self.fmtA2 % (self.antidx+1) +
+                             self.fmtA3 % tuple([1000*a for a in self.antPos[self.antidx]]))
      else:
-       self.antText.set_text(self.fmtA%(self.Nant+self.Nant2) + self.fmtA2%(self.antidx+self.Nant+1) + self.fmtA3%tuple([1000*a for a in self.antPos2[self.antidx]]))
+       self.antText.set_text(self.fmtA % (self.Nant+self.Nant2) +
+                             self.fmtA2 % (self.antidx+self.Nant+1) +
+                             self.fmtA3 %
+                             tuple([1000*a for a in self.antPos2[self.antidx]]))
 
      pl.draw()
      self.canvas.draw()
 
-
-
-
-  def _onAntennaDrag(self,event):   
+  def _onAntennaDrag(self, event):
      if self.pickAnt:
-      if self.pickSub==0:
-        self.antPos[self.antidx] = [event.xdata,event.ydata]
-        self.antText.set_text(self.fmtA%(self.Nant+self.Nant2) + self.fmtA2%(self.antidx+1) + self.fmtA3%tuple([1000*a for a in self.antPos[self.antidx]]))
-        self._setBaselines(-1) #antidx=self.antidx)
+      if self.pickSub == 0:
+        self.antPos[self.antidx] = [event.xdata, event.ydata]
+        self.antText.set_text(self.fmtA % (self.Nant+self.Nant2) +
+                              self.fmtA2 % (self.antidx+1) +
+                              self.fmtA3 %
+                              tuple([1000*a for a in self.antPos[self.antidx]]))
+        self._setBaselines(-1)  # antidx=self.antidx)
         self._plotAntennas(redo=False)
-        self._setBeam(-1) #antidx=self.antidx)
+        self._setBeam(-1)  # antidx=self.antidx)
       else:
-        self.antPos2[self.antidx] = [event.xdata,event.ydata]
-        self.antText.set_text(self.fmtA%(self.Nant+self.Nant2) + self.fmtA2%(self.antidx+self.Nant+1) + self.fmtA3%tuple([1000*a for a in self.antPos2[self.antidx]]))
-        self._setBaselines(-1) #antidx=self.antidx+self.Nant)
+        self.antPos2[self.antidx] = [event.xdata, event.ydata]
+        self.antText.set_text(self.fmtA % (self.Nant+self.Nant2) +
+                              self.fmtA2 % (self.antidx+self.Nant+1) +
+                              self.fmtA3 %
+                              tuple([1000*a for a in self.antPos2[self.antidx]]))
+        self._setBaselines(-1)  # antidx=self.antidx+self.Nant)
         self._plotAntennas(redo=False)
-        self._setBeam(-1) #antidx=self.antidx+self.Nant)
+        self._setBeam(-1)  # antidx=self.antidx+self.Nant)
 
       self._plotBeam(redo=False)
       self._plotDirty(redo=False)
@@ -1464,97 +1484,84 @@ class Interferometer(object):
    #    pl.draw()
       self.canvas.draw()
 
-
 # Drag the sphere plot (to change source position)
      if self._onSphere:
        oldDec = self.dec/self.deg2rad
        newDec, newH0 = self.spherePlot.elev, self.spherePlot.azim
 
    # Limits on declination:
-       if np.abs(newDec)>90.:
-         self.spherePlot.view_init(elev = oldDec, azim=0.0)
+       if np.abs(newDec) > 90.:
+         self.spherePlot.view_init(elev=oldDec, azim=0.0)
          return
 
        newDec *= self.deg2rad
        if not self.lock:
-         self.lock=True
-         if newDec != self.dec and np.abs(newDec-self.lat)<np.pi/2.:
+         self.lock = True
+         if newDec != self.dec and np.abs(newDec-self.lat) < np.pi/2.:
            self.widget['dec'].set_val(newDec/self.deg2rad)
-           self.spherePlot.view_init(elev = newDec/self.deg2rad, azim=0.0)
+           self.spherePlot.view_init(elev=newDec/self.deg2rad, azim=0.0)
            self.dec = newDec
            self._changeCoordinates()
            self.lock = False
          else:
-           self.spherePlot.view_init(elev = oldDec, azim=0.0)
+           self.spherePlot.view_init(elev=oldDec, azim=0.0)
            self.lock = False
        else:
-           self.spherePlot.view_init(elev = oldDec, azim=0.0)
+           self.spherePlot.view_init(elev=oldDec, azim=0.0)
 
-
-
-
-
-  def _onRelease(self,event):
+  def _onRelease(self, event):
      self._onSphere = False
      if self.pickAnt:
        self.pickAnt = False
-       self.antText.set_text(self.fmtA%self.Nant)
+       self.antText.set_text(self.fmtA % self.Nant)
        pl.draw()
        self.canvas.draw()
 
-
-  def _onRobust(self,newrob):
+  def _onRobust(self, newrob):
     self.robust = newrob
     self._changeCoordinates()
 
-
-  def _onKeyLat(self,newlat):
-
+  def _onKeyLat(self, newlat):
    if not self.GUIres:
      return
 
    newlat *= self.deg2rad
    if not self.lock:
     self.lock = True
-    if newlat != self.lat: 
-     if np.abs(newlat-self.dec)<np.pi/2.:
+    if newlat != self.lat:
+     if np.abs(newlat-self.dec) < np.pi/2.:
       self.lat = newlat
       self._changeCoordinates()
      else:
       self.widget['lat'].set_val(self.lat/self.deg2rad)
     self.lock = False
 
-
-  def _subarrwgt(self,w1w2):
+  def _subarrwgt(self, w1w2):
      self.W2W1 = 10.**(-w1w2)
      self._changeCoordinates()
 
-  def _gammacorr(self,gamma):
+  def _gammacorr(self, gamma):
     self.gamma = gamma
     self._plotModel(redo=False)
     pl.draw()
     self.canvas.draw()
 
-  def _onKeyDec(self,newdec):
-
+  def _onKeyDec(self, newdec):
    if not self.GUIres:
      return
 
    newdec *= self.deg2rad
    if not self.lock:
-    self.lock=True
-    if newdec != self.dec: 
-     if np.abs(newdec-self.lat)<np.pi/2.:
+    self.lock = True
+    if newdec != self.dec:
+     if np.abs(newdec-self.lat) < np.pi/2.:
       self.dec = newdec
       self._changeCoordinates()
      else:
       self.widget['dec'].set_val(self.dec/self.deg2rad)
     self.lock = False
 
-
-
-  def _onKeyH0(self,newH0):
-
+  def _onKeyH0(self, newH0):
    if not self.GUIres:
      return
 
@@ -1565,17 +1572,14 @@ class Interferometer(object):
       self.Hcov[0] = newH0
     else:
       self.Hcov[0] = -self.Hmax
-      self.widget['H0'].set_val(self.Hcov[0]/self.Hfac) 
-    if self.Hcov[1]<self.Hcov[0]:
+      self.widget['H0'].set_val(self.Hcov[0]/self.Hfac)
+    if self.Hcov[1] < self.Hcov[0]:
       self.Hcov[1] = self.Hcov[0]
-      self.widget['H1'].set_val(self.Hcov[1]/self.Hfac) 
+      self.widget['H1'].set_val(self.Hcov[1]/self.Hfac)
     self._changeCoordinates()
-    self.lock=False
+    self.lock = False
 
-
-
-  def _onKeyH1(self,newH1):
-
+  def _onKeyH1(self, newH1):
    if not self.GUIres:
      return
 
@@ -1586,16 +1590,14 @@ class Interferometer(object):
       self.Hcov[1] = newH1
     else:
       self.Hcov[1] = self.Hmax
-      self.widget['H1'].set_val(self.Hcov[1]/self.Hfac) 
-    if self.Hcov[0]>self.Hcov[1]:
+      self.widget['H1'].set_val(self.Hcov[1]/self.Hfac)
+    if self.Hcov[0] > self.Hcov[1]:
       self.Hcov[0] = self.Hcov[1]
-      self.widget['H0'].set_val(self.Hcov[0]/self.Hfac) 
+      self.widget['H0'].set_val(self.Hcov[0]/self.Hfac)
     self._changeCoordinates()
-    self.lock=False
+    self.lock = False
 
-
-  def _addAntenna(self,antenna):
-
+  def _addAntenna(self, antenna):
     if not self.antLock:
 
       self.antLock = True
@@ -1603,21 +1605,23 @@ class Interferometer(object):
       if self.Nant >= len(self.antPos):
         self.antPos.append([0.,0.])
         self.Nant += 1
-        self.antLabelPlot.append(self.antPlot.annotate(str(self.Nant),textcoords = 'offset points',xy=(0,0),xytext=(-7,4)))
+        self.antLabelPlot.append(
+          self.antPlot.annotate(str(self.Nant),
+                                textcoords = 'offset points',
+                                xy=(0, 0), xytext=(-7, 4)))
       else:
-        self.antLabelPlot[self.Nant].xy = (self.antPos[self.Nant][0],self.antPos[self.Nant][1])
+        self.antLabelPlot[self.Nant].xy = (self.antPos[self.Nant][0],
+                                           self.antPos[self.Nant][1])
         self.Nant += 1
 
       self.antLabelPlot[self.Nant-1].set_visible(True)
 
-      newtext = self.fmtA%self.Nant 
+      newtext = self.fmtA % self.Nant
       self.antText.set_text(newtext)
       self._prepareBaselines()
       self._changeCoordinates()
 
       self.antLock = False
-
-
 
   def _removeAntenna(self,antenna):
 
