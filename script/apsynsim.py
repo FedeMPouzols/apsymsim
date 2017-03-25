@@ -1718,7 +1718,7 @@ class Interferometer(object):
          scal = 1.0
 
       if cz >= 0:
-       if event.button == 1 and cz >=0:
+       if event.button == 1 and cz >= 0:
          RA = event.xdata
          Dec = event.ydata
          xL = np.abs(self.curzoom[cz][1]-self.curzoom[cz][0])/4./scal
@@ -2041,8 +2041,8 @@ class CLEANer(object):
     self.entries['Sensit'].pack(side=Tk.RIGHT)
 
     self.frames['CLOpt'].pack(side=Tk.LEFT)
-    # self.canvas2.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
-    self.canvas1.get_tk_widget().pack(side=Tk.LEFT)  #, fill=Tk.BOTH, expand=1)
+    # self.canvas2.get_tk_widget().pack(side=Tk.LEFT) # , fill=Tk.BOTH, expand=1)
+    self.canvas1.get_tk_widget().pack(side=Tk.LEFT)  # , fill=Tk.BOTH, expand=1)
 
     self.buttons = {}
     self.buttons['Noise'] = Tk.Button(self.frames['CLOpt'],
@@ -2121,11 +2121,11 @@ class CLEANer(object):
     try:
       sensit = float(self.entries['Sensit'].get())
     except:
-      showinfo('ERROR!','Please, check the content of Sensit!\nIt should be a number!')
+      showinfo('ERROR!', 'Please, check the content of Sensit!\nIt should be a number!')
       return
 
-    if sensit < 0.0: 
-      showinfo('ERROR!','The sensitivity should be >= 0!')
+    if sensit < 0.0:
+      showinfo('ERROR!', 'The sensitivity should be >= 0!')
       return
 
    # Get the number of baselines and the number of integration times:
@@ -2135,20 +2135,21 @@ class CLEANer(object):
     self.parent._setNoise(sensPerSamp)
     self._reset(donoise=False)
 
-
   def _doRestore(self):
 
    if self.dorestore:
     self.dorestore = False
-    toadd = self.cleanmodd[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+    toadd = self.cleanmodd[self.Np4:self.parent.Npix-self.Np4,
+                           self.Np4:self.parent.Npix-self.Np4]
 
    else:
     self.dorestore = True
     if self.resadd:
-     toadd = (self.cleanmod + self.residuals)[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+     toadd = (self.cleanmod + self.residuals)[self.Np4:self.parent.Npix-self.Np4,
+                                              self.Np4:self.parent.Npix-self.Np4]
     else:
-     toadd = self.cleanmod[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
-
+     toadd = self.cleanmod[self.Np4:self.parent.Npix-self.Np4,
+                           self.Np4:self.parent.Npix-self.Np4]
 
    self.CLEANPlotPlot.set_array(toadd)
    self.CLEANPlotPlot.norm.vmin = np.min(toadd)
@@ -2156,10 +2157,9 @@ class CLEANer(object):
    self.canvas1.draw()
    del toadd
 
-
   def _doRescale(self):
 
-  # if True:
+    # if True:
     clarr = self.CLEANPlotPlot.get_array()
     self.CLEANPlotPlot.norm.vmin = np.min(clarr)
     self.CLEANPlotPlot.norm.vmax = np.max(clarr)
@@ -2171,168 +2171,172 @@ class CLEANer(object):
 
     del clarr, rsarr
 
-  # self.CLEANPlot.autoscale() #.norm.vmin = np.min(clarr)
-    
+    # self.CLEANPlot.autoscale() #.norm.vmin = np.min(clarr)
     self.canvas1.draw()
-
-
-
 
   def _ApplyGain(self):
 
     try:
       an1 = int(self.entries['Ant1'].curselection()[0])
     except:
-      showinfo('WARNING!','No antenna selected!')
+      showinfo('WARNING!', 'No antenna selected!')
       return
 
     try:
       an2 = int(self.entries['Ant2'].curselection()[0])
     except:
-      an2=an1
+      an2 = an1
 
+    if an2 == an1:
+      an2 = -1
 
-    if an2==an1:
-      an2=-1
-
-    G = float(self.entries['Amp'].get())/100.*np.exp(1.j*float(self.entries['Phas'].get())*np.pi/180.)
+    G = float((self.entries['Amp'].get())/100. *
+              np.exp(1.j*float(self.entries['Phas'].get())*np.pi/180.))
     H0 = int(self.entries['H0'].get())
     H1 = int(self.entries['H1'].get())
 
-    self.parent._setGains(an1,an2,H0,H1,G)
+    self.parent._setGains(an1, an2, H0, H1, G)
     self._reset()
 
   def _makeMask(self):
-
     self.mask = np.zeros(np.shape(self.parent.beam))
     self.bmask = np.zeros(np.shape(self.parent.beam)).astype(np.bool)
 
-
-  def _onPick(self,event):
-
+  def _onPick(self, event):
      RA = event.mouseevent.xdata
      Dec = event.mouseevent.ydata
      yi = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.parent.Npix)
      xi = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.parent.Npix)
-     Flux = self.residuals[xi,yi]
-     self.pickcoords = [xi,yi,RA,Dec]
-     self.ResidText.set_text(self.fmtD2%(Flux,RA,Dec,self.PEAK,self.RMS))
+     Flux = self.residuals[xi, yi]
+     self.pickcoords = [xi, yi, RA, Dec]
+     self.ResidText.set_text(self.fmtD2 % (Flux, RA, Dec,
+                                           self.PEAK, self.RMS))
      if self.dorestore:
       if self.resadd:
-       Flux = self.cleanmod[xi,yi] + self.residuals[xi,yi]
+       Flux = self.cleanmod[xi, yi] + self.residuals[xi, yi]
       else:
-       Flux = self.cleanmod[xi,yi]
+       Flux = self.cleanmod[xi, yi]
      else:
-       Flux = self.cleanmodd[xi,yi]
+       Flux = self.cleanmodd[xi, yi]
 
-
-     self.CLEANText.set_text(self.fmtDC%(Flux,RA,Dec,self.CLEANPEAK,self.CLEANPEAK/self.RMS)+'\n'+self.Beamtxt)
-
+     self.CLEANText.set_text(self.fmtDC % (Flux, RA, Dec,
+                                           self.CLEANPEAK,
+                                           self.CLEANPEAK/self.RMS) +
+                             '\n'+self.Beamtxt)
 
      self.canvas1.draw()
-   #  self.canvas2.draw()
+     # self.canvas2.draw()
 
-
-  def _onPress(self,event):
+  def _onPress(self, event):
     self.canvas1._tkcanvas.focus_set()
     if event.inaxes == self.ResidPlot:
       self.pressed = int(event.button)
       RA = event.xdata
       Dec = event.ydata
-      self.xydata = [RA,Dec]
+      self.xydata = [RA, Dec]
       self.xy0[1] = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.parent.Npix)
       self.xy0[0] = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.parent.Npix)
-      self.moved = False 
+      self.moved = False
 
-  def _onRelease(self,event):
-
+  def _onRelease(self, event):
     if event.inaxes != self.ResidPlot:
-      self.moved=False
+      self.moved = False
 
     if self.moved:
       RA = event.xdata
       Dec = event.ydata
       y1 = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.parent.Npix)
       x1 = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.parent.Npix)
-      xi,xf = [min(self.xy0[0],x1),max(self.xy0[0],x1)]
-      yi,yf = [min(self.xy0[1],y1),max(self.xy0[1],y1)]
-      if self.pressed==1:
-        self.mask[xi:xf,yi:yf] = 1.0
-        self.bmask[xi:xf,yi:yf] = True
+      xi, xf = [min(self.xy0[0], x1), max(self.xy0[0], x1)]
+      yi, yf = [min(self.xy0[1], y1), max(self.xy0[1], y1)]
+      if self.pressed == 1:
+        self.mask[xi:xf, yi:yf] = 1.0
+        self.bmask[xi:xf, yi:yf] = True
       else:
-        self.mask[xi:xf,yi:yf] = 0.0
-        self.bmask[xi:xf,yi:yf] = False
+        self.mask[xi:xf, yi:yf] = 0.0
+        self.bmask[xi:xf, yi:yf] = False
 
       for coll in self.MaskPlot.collections:
          self.ResidPlot.collections.remove(coll)
 
-      self.MaskPlot = self.ResidPlot.contour(np.linspace(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Npix/2),np.linspace(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Npix/2),self.mask[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4],levels=[0.5])
+      self.MaskPlot = self.ResidPlot.contour(np.linspace(self.parent.Xaxmax/2.,
+                                                         -self.parent.Xaxmax/2.,
+                                                         self.parent.Npix/2),
+                                             np.linspace(self.parent.Xaxmax/2.,
+                                                         -self.parent.Xaxmax/2.,
+                                                         self.parent.Npix/2),
+                                             self.mask[self.Np4:self.parent.Npix-self.Np4,
+                                                       self.Np4:self.parent.Npix-self.Np4],
+                                             levels=[0.5])
 
-   #   self.ResidPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
-   #   self.ResidPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
-      self.CLEANPlot.set_xlim((self.parent.curzoom[1][0],self.parent.curzoom[1][1]))
-      self.CLEANPlot.set_ylim((self.parent.curzoom[1][2],self.parent.curzoom[1][3]))
+      # self.ResidPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
+      # self.ResidPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
+      self.CLEANPlot.set_xlim((self.parent.curzoom[1][0],
+                               self.parent.curzoom[1][1]))
+      self.CLEANPlot.set_ylim((self.parent.curzoom[1][2],
+                               self.parent.curzoom[1][3]))
       self.canvas1.draw()
 
-      self.Box.set_data([0.,0.,0.,0.,0.],[0.,0.,0.,0.,0.])
-
+      self.Box.set_data([0., 0., 0., 0., 0.],
+                        [0., 0., 0., 0., 0.])
 
     self.moved = False
     self.pressed = -1
     self.canvas1.draw()
 
-  def _doMask(self,event):
-    if self.pressed>=0 and event.inaxes==self.ResidPlot:
+  def _doMask(self, event):
+    if self.pressed >= 0 and event.inaxes == self.ResidPlot:
       self.moved = True
       RA = event.xdata
       Dec = event.ydata
       y1 = np.floor((self.Xaxmax-RA)/(2.*self.Xaxmax)*self.parent.Npix)
       x1 = np.floor((self.Xaxmax-Dec)/(2.*self.Xaxmax)*self.parent.Npix)
-      self.Box.set_data([self.xydata[0],self.xydata[0],RA,RA,self.xydata[0]],[self.xydata[1],Dec,Dec,self.xydata[1],self.xydata[1]])
+      self.Box.set_data([self.xydata[0], self.xydata[0], RA, RA,
+                         self.xydata[0]], [self.xydata[1], Dec, Dec,
+                                           self.xydata[1],
+                                           self.xydata[1]])
       self.canvas1.draw()
 
   def _AddRes(self):
-
     if not self.dorestore:
-      showinfo('ERROR','Cannot add residual to the (unrestored) CLEAN model!\nRestore first!')
+      showinfo('ERROR',
+               'Cannot add residual to the (unrestored) CLEAN model!\nRestore first!')
 
     if self.resadd:
       self.resadd = False
-      toadd = self.cleanmod[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+      toadd = self.cleanmod[self.Np4:self.parent.Npix-self.Np4,
+                            self.Np4:self.parent.Npix-self.Np4]
     else:
       self.resadd = True
-      toadd = (self.cleanmod + self.residuals)[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
+      toadd = (self.cleanmod + self.residuals)[self.Np4:self.parent.Npix-self.Np4,
+                                               self.Np4:self.parent.Npix-self.Np4]
 
     self.CLEANPlotPlot.set_array(toadd)
     self.CLEANPlotPlot.norm.vmin = np.min(toadd)
     self.CLEANPlotPlot.norm.vmax = np.max(toadd)
 
     self.canvas1.draw()
- #   self.canvas2.draw()
+    # self.canvas2.draw()
     del toadd
 
-
   def _reCalib(self):
-
-    self.entries['Ant1'].delete(0,Tk.END)
-    self.entries['Ant2'].delete(0,Tk.END)
+    self.entries['Ant1'].delete(0, Tk.END)
+    self.entries['Ant2'].delete(0, Tk.END)
     self.entries['H0'].set(0)
     self.entries['H1'].set(self.parent.nH)
     self.entries['Amp'].set(100)
     self.entries['Phas'].set(0)
 
     for i in range(self.parent.Nant):
-      self.entries['Ant1'].insert(Tk.END,str(i+1))
-      self.entries['Ant2'].insert(Tk.END,str(i+1))
+      self.entries['Ant1'].insert(Tk.END, str(i+1))
+      self.entries['Ant2'].insert(Tk.END, str(i+1))
 
-    self.parent._setGains(-1,-1,0,0,1.0)
+    self.parent._setGains(-1, -1, 0, 0, 1.0)
     self._reset()
 
+  def _reset(self, donoise=False):
 
-
-  def _reset(self,donoise=False):
-
-    extr = [np.min(self.parent.dirtymap),np.max(self.parent.dirtymap)]
+    extr = [np.min(self.parent.dirtymap), np.max(self.parent.dirtymap)]
 
     self.ResidPlot.cla()
     self.dorestore = True
@@ -2340,70 +2344,110 @@ class CLEANer(object):
     self.fmtD2 = r'% .2e Jy/beam at point' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f ' "\n" r'Peak: % 4.2f Jy/beam ; rms: % 4.2f Jy/beam'
     self.fmtDC = r'Model: % .2e Jy/beam at point' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f ' "\n" r'Peak: % 4.2f Jy/beam ; Dyn. Range: % 4.2f'
 
-    dslice = self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
-    self.ResidPlotPlot = self.ResidPlot.imshow(dslice,interpolation='nearest',picker=True, cmap=self.parent.currcmap)
-    modflux = self.parent.dirtymap[self.parent.Nphf,self.parent.Nphf]
+    dslice = self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,
+                                  self.Np4:self.parent.Npix-self.Np4]
+    self.ResidPlotPlot = self.ResidPlot.imshow(dslice,
+                                               interpolation='nearest',
+                                               picker=True,
+                                               cmap=self.parent.currcmap)
+    modflux = self.parent.dirtymap[self.parent.Nphf, self.parent.Nphf]
     self.RMS = np.sqrt(np.var(dslice)+np.average(dslice)**2.)
     self.PEAK = np.max(dslice)
     self.CLEANPEAK = 0.0
-    self.pickcoords = [self.parent.Nphf,self.parent.Nphf,0.,0.]
-    self.ResidText = self.ResidPlot.text(0.05,0.87,self.fmtD2%(modflux,0.0,0.0,self.PEAK,self.RMS),
-         transform=self.ResidPlot.transAxes,bbox=dict(facecolor='white', alpha=0.7))
-    pl.setp(self.ResidPlotPlot, extent=(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
+    self.pickcoords = [self.parent.Nphf, self.parent.Nphf, 0., 0.]
+    self.ResidText = self.ResidPlot.text(0.05, 0.87,
+                                         self.fmtD2 % (modflux, 0.0, 0.0,
+                                                       self.PEAK, self.RMS),
+                                         transform=self.ResidPlot.transAxes,
+                                         bbox=dict(facecolor='white',
+                                                   alpha=0.7))
+    pl.setp(self.ResidPlotPlot, extent=(self.parent.Xaxmax/2.,
+                                        -self.parent.Xaxmax/2.,
+                                        -self.parent.Xaxmax/2.,
+                                        self.parent.Xaxmax/2.))
 
     self.Xaxmax = float(self.parent.Xaxmax)
 
-    self.Box = self.ResidPlot.plot([0.,0.,0.,0.,0.],[0.,0.,0.,0.,0.],lw=2,color='w')[0]
+    self.Box = self.ResidPlot.plot([0., 0., 0., 0., 0.],
+                                   [0., 0., 0., 0., 0.],
+                                   lw=2, color='w')[0]
 
     self.ResidPlot.set_ylabel('Dec offset (as)')
     self.ResidPlot.set_xlabel('RA offset (as)')
     self.ResidPlot.set_title('RESIDUALS')
 
-    self.MaskPlot = self.ResidPlot.contour(np.linspace(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Npix/2),np.linspace(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Npix/2),self.mask[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4],levels=[0.5])
-  #  pl.setp(self.MaskPlot, extent=(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
+    self.MaskPlot = self.ResidPlot.contour(np.linspace(self.parent.Xaxmax/2.,
+                                                       -self.parent.Xaxmax/2.,
+                                                       self.parent.Npix/2),
+                                           np.linspace(self.parent.Xaxmax/2.,
+                                                       -self.parent.Xaxmax/2.,
+                                                       self.parent.Npix/2),
+                                           self.mask[self.Np4:self.parent.Npix-self.Np4,
+                                                     self.Np4:self.parent.Npix-self.Np4],
+                                           levels=[0.5])
+    # pl.setp(self.MaskPlot, extent=(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
 
-  #  self.ResidPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
-  #  self.ResidPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
-
+    # self.ResidPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
+    # self.ResidPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
 
     self.residuals = np.copy(self.parent.dirtymap)
     self.cleanmod = np.zeros(np.shape(self.parent.dirtymap))
     self.cleanmodd = np.zeros(np.shape(self.parent.dirtymap))
 
     self.CLEANPlot.cla()
-    self.CLEANPlotPlot = self.CLEANPlot.imshow(self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4],interpolation='nearest',picker=True, cmap=self.parent.currcmap)
-    modflux = self.parent.dirtymap[self.parent.Nphf,self.parent.Nphf]
-    self.CLEANText = self.CLEANPlot.text(0.05,0.83,self.fmtDC%(0.0,0.0,0.0,0.,0.),
-         transform=self.CLEANPlot.transAxes,bbox=dict(facecolor='white', alpha=0.7))
-    pl.setp(self.CLEANPlotPlot, extent=(self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
+    self.CLEANPlotPlot = self.CLEANPlot.imshow(self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,
+                                                                    self.Np4:self.parent.Npix-self.Np4],
+                                               interpolation='nearest',
+                                               picker=True,
+                                               cmap=self.parent.currcmap)
+    modflux = self.parent.dirtymap[self.parent.Nphf,
+                                   self.parent.Nphf]
+    self.CLEANText = self.CLEANPlot.text(0.05, 0.83,
+                                         self.fmtDC % (0.0, 0.0, 0.0, 0., 0.),
+                                         transform=self.CLEANPlot.transAxes,
+                                         bbox=dict(facecolor='white',
+                                                   alpha=0.7))
+    pl.setp(self.CLEANPlotPlot, extent=(self.parent.Xaxmax/2.,
+                                        -self.parent.Xaxmax/2.,
+                                        -self.parent.Xaxmax/2.,
+                                        self.parent.Xaxmax/2.))
     self.CLEANPlot.set_ylabel('Dec offset (as)')
     self.CLEANPlot.set_xlabel('RA offset (as)')
     self.CLEANPlot.set_title('CLEAN (0 ITER)')
-    self.CLEANPlotPlot.set_array(self.cleanmod[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4])
+    self.CLEANPlotPlot.set_array(self.cleanmod[self.Np4:self.parent.Npix-self.Np4,
+                                               self.Np4:self.parent.Npix-self.Np4])
 
-#    self.CLEANPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
-#    self.CLEANPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
-    self.CLEANPlot.set_xlim((self.parent.curzoom[1][0],self.parent.curzoom[1][1]))
-    self.CLEANPlot.set_ylim((self.parent.curzoom[1][2],self.parent.curzoom[1][3]))
+    # self.CLEANPlot.set_xlim((self.parent.Xaxmax/2.,-self.parent.Xaxmax/2.))
+    # self.CLEANPlot.set_ylim((-self.parent.Xaxmax/2.,self.parent.Xaxmax/2.))
+    self.CLEANPlot.set_xlim((self.parent.curzoom[1][0],
+                             self.parent.curzoom[1][1]))
+    self.CLEANPlot.set_ylim((self.parent.curzoom[1][2],
+                             self.parent.curzoom[1][3]))
 
     self.totiter = 0
 
     # DERIVE THE CLEAN BEAM
-    MainLobe = np.where(self.parent.beam>0.6)
+    MainLobe = np.where(self.parent.beam > 0.6)
     self.cleanBeam = np.zeros(np.shape(self.residuals))
 
     if len(MainLobe[0]) < 5:
-      showinfo('ERROR!', 'The main lobe of the PSF is too narrow!\n CLEAN model will not be restored')
+      showinfo('ERROR!',
+               'The main lobe of the PSF is too narrow!\n CLEAN model will not be restored')
       self.cleanBeam[:] = 0.0
-      self.cleanBeam[self.parent.Npix/2,self.parent.Npix/2] = 1.0
+      self.cleanBeam[self.parent.Npix/2, self.parent.Npix/2] = 1.0
     else:
-      dX = MainLobe[0]-self.parent.Npix/2 ; dY = MainLobe[1]-self.parent.Npix/2
-    #  if True:
+      dX = MainLobe[0]-self.parent.Npix/2
+      dY = MainLobe[1]-self.parent.Npix/2
+
       try:
-        fit = spfit.leastsq(lambda x: np.exp(-(dX*dX*x[0]+dY*dY*x[1]+dX*dY*x[2]))-self.parent.beam[MainLobe],[1.,1.,0.])
-        Pang = 180./np.pi*(np.arctan2(fit[0][2],(fit[0][0]-fit[0][1]))/2.)
-        AmB = fit[0][2]/np.sin(2.*np.pi/180.*Pang) ;  ApB = fit[0][0]+fit[0][1]
-        A = 2.355*(2./(ApB + AmB))**0.5*self.parent.imsize/self.parent.Npix  
+        fit = spfit.leastsq(lambda x:
+                            np.exp(-(dX*dX*x[0]+dY*dY*x[1]+dX*dY*x[2]))-self.parent.beam[MainLobe],
+                            [1., 1., 0.])
+        Pang = 180./np.pi*(np.arctan2(fit[0][2],
+                                      (fit[0][0]-fit[0][1]))/2.)
+        AmB = fit[0][2]/np.sin(2.*np.pi/180.*Pang)
+        ApB = fit[0][0]+fit[0][1]
+        A = 2.355*(2./(ApB + AmB))**0.5*self.parent.imsize/self.parent.Npix
         B = 2.355*(2./(ApB - AmB))**0.5*self.parent.imsize/self.parent.Npix
         if A < B:
           A, B = B, A
@@ -2414,25 +2458,33 @@ class CLEANer(object):
           Pang -= 180.
 
         if B > 0.1:
-          self.Beamtxt = '%.1f x %.1f as (PA = %.1f deg.)'%(A,B,Pang)
+          self.Beamtxt = '%.1f x %.1f as (PA = %.1f deg.)' % (A, B, Pang)
         else:
-          self.Beamtxt = '%.1f x %.1f mas (PA = %.1f deg.)'%(1000.*A,1000.*B,Pang)
+          self.Beamtxt = '%.1f x %.1f mas (PA = %.1f deg.)' % (1000.*A,
+                                                               1000.*B,
+                                                               Pang)
 
-        self.CLEANText.set_text(self.fmtDC%(0.,0.,0.,0.,0.)+'\n'+self.Beamtxt)
-    #    print 'BEAM FIT: ',fit[0], A, B, Pang
-        ddX = np.outer(np.ones(self.parent.Npix),np.arange(-self.parent.Npix/2,self.parent.Npix/2).astype(np.float64))
-        ddY = np.outer(np.arange(-self.parent.Npix/2,self.parent.Npix/2).astype(np.float64),np.ones(self.parent.Npix))
+        self.CLEANText.set_text(self.fmtDC % (0., 0., 0., 0., 0.) +
+                                '\n' + self.Beamtxt)
+        # print 'BEAM FIT: ',fit[0], A, B, Pang
+        ddX = np.outer(np.ones(self.parent.Npix),
+                       np.arange(-self.parent.Npix/2,
+                                 self.parent.Npix/2).astype(np.float64))
+        ddY = np.outer(np.arange(-self.parent.Npix/2,
+                                 self.parent.Npix/2).astype(np.float64),
+                       np.ones(self.parent.Npix))
 
-        self.cleanBeam[:] = np.exp(-(ddY*ddY*fit[0][0]+ddX*ddX*fit[0][1]+ddY*ddX*fit[0][2]))
+        self.cleanBeam[:] = np.exp(-(ddY*ddY*fit[0][0] +
+                                     ddX*ddX*fit[0][1] +
+                                     ddY*ddX*fit[0][2]))
 
         del ddX, ddY
-   #   else:
+
       except:
-        showinfo('ERROR!', 'Problems fitting the PSF main lobe!\n CLEAN model will not be restored')
+        showinfo('ERROR!',
+                 'Problems fitting the PSF main lobe!\n CLEAN model will not be restored')
         self.cleanBeam[:] = 0.0
-        self.cleanBeam[self.parent.Npix/2,self.parent.Npix/2] = 1.0
-
-
+        self.cleanBeam[self.parent.Npix/2, self.parent.Npix/2] = 1.0
 
     self.resadd = False
     self.dorestore = True
@@ -2442,16 +2494,14 @@ class CLEANer(object):
 
     if donoise:
       self._ReNoise()
-  #  self.canvas1.mpl_connect('key_press_event', self.parent._onKeyPress)
+      # self.canvas1.mpl_connect('key_press_event', self.parent._onKeyPress)
     self.canvas1.draw()
-  #  self.canvas2.draw()
+    # self.canvas2.draw()
 
     del modflux
 
-
   def _CLEAN(self):
-
-     if np.sum(self.bmask)==0:
+     if np.sum(self.bmask) == 0:
        goods = np.ones(np.shape(self.bmask)).astype(np.bool)
        tempres = self.residuals
      else:
@@ -2465,37 +2515,48 @@ class CLEANer(object):
        niter = int(self.entries['Niter'].get())
        thrs = float(self.entries['Thres'].get())
      except:
-       showinfo('ERROR!','Please, check the content of Gain, # Iter, and Thres!\nShould be numbers!')
+       showinfo('ERROR!',
+                'Please, check the content of Gain, # Iter, and Thres!\nShould be numbers!')
        return
 
      for i in range(niter):
        self.totiter += 1
 
        if thrs != 0.0:
-         tempres[tempres<thrs] = 0.0
+         tempres[tempres < thrs] = 0.0
          if thrs < 0.0:
            tempres = np.abs(tempres)
 
-         if np.sum(tempres)==0.0:
-           showinfo('INFO','Threshold reached in CLEAN masks!')
+         if np.sum(tempres) == 0.0:
+           showinfo('INFO', 'Threshold reached in CLEAN masks!')
            break
 
-       rslice = self.residuals[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
-       peakpos = np.unravel_index(np.argmax(tempres),np.shape(self.residuals))
-       peakval = self.residuals[peakpos[0],peakpos[1]]
-       self.residuals -= gain*peakval*np.roll(np.roll(psf,peakpos[0]-self.parent.Npix/2,axis=0), peakpos[1]-self.parent.Npix/2,axis=1)
+       rslice = self.residuals[self.Np4:self.parent.Npix-self.Np4,
+                               self.Np4:self.parent.Npix-self.Np4]
+       peakpos = np.unravel_index(np.argmax(tempres),
+                                  np.shape(self.residuals))
+       peakval = self.residuals[peakpos[0], peakpos[1]]
+       self.residuals -= gain*peakval*np.roll(np.roll(psf,
+                                                      peakpos[0]-self.parent.Npix/2,
+                                                      axis=0),
+                                              peakpos[1]-self.parent.Npix/2,
+                                              axis=1)
        tempres[goods] = self.residuals[goods]
        # MODIFY CLEAN MODEL!!
-       self.cleanmodd[peakpos[0],peakpos[1]] += gain*peakval
-       self.cleanmod += gain*peakval*np.roll(np.roll(self.cleanBeam,peakpos[0]-self.parent.Npix/2,axis=0), peakpos[1]-self.parent.Npix/2,axis=1)
+       self.cleanmodd[peakpos[0], peakpos[1]] += gain*peakval
+       self.cleanmod += gain*peakval*np.roll(np.roll(self.cleanBeam,
+                                                     peakpos[0]-self.parent.Npix/2,
+                                                     axis=0),
+                                             peakpos[1]-self.parent.Npix/2,
+                                             axis=1)
        self.ResidPlotPlot.set_array(rslice)
 
        self.CLEANPEAK = np.max(self.cleanmod)
        self.totalClean += gain*peakval
-       self.CLEANPlot.set_title('CLEAN (%i ITER): %.2e Jy'%(self.totiter,self.totalClean))
+       self.CLEANPlot.set_title('CLEAN (%i ITER): %.2e Jy' % (self.totiter,
+                                                              self.totalClean))
 
-
-       xi,yi,RA,Dec = self.pickcoords
+       xi, yi, RA, Dec = self.pickcoords
 
        if self.dorestore:
         if self.resadd:
@@ -2505,26 +2566,29 @@ class CLEANer(object):
        else:
          toadd = self.cleanmodd
 
-       clFlux = toadd[xi,yi]
+       clFlux = toadd[xi, yi]
 
-
-       self.CLEANPlotPlot.set_array(toadd[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
-)
-       self.CLEANPlotPlot.norm.vmin = np.min(toadd[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
-)
-       self.CLEANPlotPlot.norm.vmax = np.max(toadd[self.Np4:self.parent.Npix-self.Np4,self.Np4:self.parent.Npix-self.Np4]
-)
+       self.CLEANPlotPlot.set_array(
+         toadd[self.Np4:self.parent.Npix-self.Np4,
+               self.Np4:self.parent.Npix-self.Np4])
+       self.CLEANPlotPlot.norm.vmin = np.min(
+         toadd[self.Np4:self.parent.Npix-self.Np4,
+               self.Np4:self.parent.Npix-self.Np4])
+       self.CLEANPlotPlot.norm.vmax = np.max(
+         toadd[self.Np4:self.parent.Npix-self.Np4,
+               self.Np4:self.parent.Npix-self.Np4])
 
        self.RMS = np.sqrt(np.var(rslice)+np.average(rslice)**2.)
        self.PEAK = np.max(rslice)
-  #     self.RMS = np.std(self.residuals)
-       self.ResidText.set_text(self.fmtD2%(self.residuals[xi,yi],RA,Dec,self.PEAK,self.RMS))
-       self.CLEANText.set_text(self.fmtDC%(clFlux,RA,Dec,self.CLEANPEAK,self.CLEANPEAK/self.RMS)+'\n'+self.Beamtxt)
-
+       # self.RMS = np.std(self.residuals)
+       self.ResidText.set_text(self.fmtD2 % (self.residuals[xi, yi], RA, Dec,
+                                             self.PEAK, self.RMS))
+       self.CLEANText.set_text(self.fmtDC % (clFlux, RA, Dec, self.CLEANPEAK,
+                                             self.CLEANPEAK/self.RMS)+'\n'+self.Beamtxt)
 
        self.canvas1.draw()
 
-# Re-draw if threshold reached:
+     # Re-draw if threshold reached:
      self.canvas1.draw()
      del tempres, psf, goods
      try:
@@ -2537,12 +2601,11 @@ class CLEANer(object):
     win.title("Help")
     helptext = ScrolledText(win)
     helptext.config(state=Tk.NORMAL)
-    helptext.insert('1.0',__CLEAN_help_text__)
+    helptext.insert('1.0', __CLEAN_help_text__)
     helptext.config(state=Tk.DISABLED)
 
     helptext.pack()
     Tk.Button(win, text='OK', command=win.destroy).pack()
-
 
   def _showFFT(self):
 
@@ -2556,17 +2619,12 @@ class CLEANer(object):
 #    except:
 #      pass
 
-
-
-
-
   def _convSource(self):
 
     try:
       self.convSource.destroy()
     except:
       pass
-
 
     self.convSource = Tk.Toplevel(self.me)
     self.convSource.title("True source image")
