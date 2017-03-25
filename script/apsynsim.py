@@ -1603,11 +1603,11 @@ class Interferometer(object):
       self.antLock = True
 
       if self.Nant >= len(self.antPos):
-        self.antPos.append([0.,0.])
+        self.antPos.append([0., 0.])
         self.Nant += 1
         self.antLabelPlot.append(
           self.antPlot.annotate(str(self.Nant),
-                                textcoords = 'offset points',
+                                textcoords='offset points',
                                 xy=(0, 0), xytext=(-7, 4)))
       else:
         self.antLabelPlot[self.Nant].xy = (self.antPos[self.Nant][0],
@@ -1623,7 +1623,7 @@ class Interferometer(object):
 
       self.antLock = False
 
-  def _removeAntenna(self,antenna):
+  def _removeAntenna(self, antenna):
 
     if not self.antLock:
 
@@ -1631,27 +1631,22 @@ class Interferometer(object):
 
       if self.Nant > 2:
         self.Nant -= 1
-        for i in range(self.Nant,len(self.antLabelPlot)):
+        for i in range(self.Nant, len(self.antLabelPlot)):
            self.antLabelPlot[i].set_visible(False)
-      newtext = self.fmtA%self.Nant 
+      newtext = self.fmtA % self.Nant
       self.antText.set_text(newtext)
       self._prepareBaselines()
       self._changeCoordinates()
 
       self.antLock = False
 
-
-  def _onKeyPress(self,event):
+  def _onKeyPress(self, event):
 
     if event.key == 'u' or event.key == 'U':
-
       if self.tks is not None:
         self.myUVPLOT2 = UVPLOTTER2(self)
  
-
-
     if event.key == 'c' or event.key == 'C':
-
       if self.currcmap == cm.jet:
          self.currcmap = cm.Greys_r
       else:
@@ -1670,7 +1665,6 @@ class Interferometer(object):
         self.myCLEAN.CLEANPlotPlot.set_cmap(self.currcmap)
         self.myCLEAN.canvas1.draw()
 
-
     if event.key == 'Z':
       event.button = 1
       event.dblclick = True
@@ -1680,38 +1674,48 @@ class Interferometer(object):
       event.dblclick = True
       self._onPress(event)
 
-
-
-  def _onPress(self,event):
-
+  def _onPress(self, event):
     if event.inaxes == self.spherePlot:
       self._onSphere = True
 
-
-    if not hasattr(event,'dblclick'):
+    if not hasattr(event, 'dblclick'):
        event.dblclick = False
 
     if event.dblclick:
-
       mpl = [self.modelPlot, self.dirtyPlot]
       if self.myCLEAN:
         mpl += [self.myCLEAN.ResidPlot, self.myCLEAN.CLEANPlot]
 
-# ZOOM IN:
+        # ZOOM IN:
       if event.inaxes == self.beamPlot:
          toZoom = [self.beamPlot]
-         cz = 0; inv = True; inv2 = False; scal = 1.0
-      elif event.inaxes in mpl: #[self.modelPlot, self.dirtyPlot]:
-         toZoom = mpl #[self.modelPlot, self.dirtyPlot]
-         cz = 1; inv = True; inv2 = False; scal = 1.0
+         cz = 0
+         inv = True
+         inv2 = False
+         scal = 1.0
+      elif event.inaxes in mpl:  # [self.modelPlot, self.dirtyPlot]:
+         toZoom = mpl  # [self.modelPlot, self.dirtyPlot]
+         cz = 1
+         inv = True
+         inv2 = False
+         scal = 1.0
       elif event.inaxes == self.UVPlot:
          toZoom = [self.UVPlot]
-         cz = 2; inv = True; inv2 = True; scal = self.wavelength[2]
+         cz = 2
+         inv = True
+         inv2 = True
+         scal = self.wavelength[2]
       elif event.inaxes == self.antPlot:
          toZoom = [self.antPlot]
-         cz = 3; inv = False; inv2 = False; scal = 1.0
+         cz = 3
+         inv = False
+         inv2 = False
+         scal = 1.0
       else:
-         cz = -1; inv = False;inv2 = False; scal = 1.0
+         cz = -1
+         inv = False
+         inv2 = False
+         scal = 1.0
 
       if cz >= 0:
        if event.button == 1 and cz >=0:
@@ -1723,7 +1727,7 @@ class Interferometer(object):
          x1 = RA+xL
          y0 = Dec-xL
          y1 = Dec+xL
-         if cz in [0,1]:
+         if cz in [0, 1]:
           if x0 < -self.Xaxmax/2.:
            x0 = -self.Xaxmax/2.
            x1 = x0 + 2.*xL
@@ -1736,13 +1740,13 @@ class Interferometer(object):
           if y1 > self.Xaxmax/2.:
            y1 = self.Xaxmax/2.
            y0 = y1 - 2.*xL
-# ZOOM OUT:
+           # ZOOM OUT:
        if event.button == 3:
          RA = event.xdata
          Dec = event.ydata
          xL = np.abs(self.curzoom[cz][1]-self.curzoom[cz][0])/scal
          yL = np.abs(self.curzoom[cz][3]-self.curzoom[cz][2])/scal
-         if cz in [0,1]:
+         if cz in [0, 1]:
           if xL > self.Xaxmax/2.:
            xL = self.Xaxmax/2.
           if yL > self.Xaxmax/2.:
@@ -1752,7 +1756,7 @@ class Interferometer(object):
          x1 = RA+xL
          y0 = Dec-xL
          y1 = Dec+xL
-         if cz in [0,1]:
+         if cz in [0, 1]:
           if x0 < -self.Xaxmax/2.:
            x0 = -self.Xaxmax/2.
            x1 = x0 + 2.*xL
@@ -1767,19 +1771,23 @@ class Interferometer(object):
            y0 = y1 - 2.*xL
 
        if inv:
-         xx0 = x1 ; xx1 = x0
+         xx0 = x1
+         xx1 = x0
        else:
-         xx0 = x0 ; xx1 = x1
+         xx0 = x0
+         xx1 = x1
        if inv2:
-         yy0 = y1 ; yy1 = y0
+         yy0 = y1
+         yy1 = y0
        else:
-         yy0 = y0 ; yy1 = y1
+         yy0 = y0
+         yy1 = y1
 
        for ax in toZoom:
-           ax.set_xlim((xx0,xx1))
-           ax.set_ylim((yy0,yy1))
+           ax.set_xlim((xx0, xx1))
+           ax.set_ylim((yy0, yy1))
 
-       self.curzoom[cz] = (xx0*scal,xx1*scal,yy0*scal,yy1*scal)
+       self.curzoom[cz] = (xx0*scal, xx1*scal, yy0*scal, yy1*scal)
 
        pl.draw()
        self.canvas.draw()
@@ -1787,51 +1795,47 @@ class Interferometer(object):
        if self.myCLEAN:
          self.myCLEAN.canvas1.draw()
 
+  def saveArray(self, array):
 
-  def saveArray(self,array):
+    fname = tkFileDialog.asksaveasfilename(defaultextension='.array',
+                                           title='Save current array...')
+    iff = open(fname, 'w')
 
-    fname = tkFileDialog.asksaveasfilename(defaultextension='.array',title='Save current array...')
-    iff = open(fname,'w')
-
-    print >> iff,'LATITUDE % 3.1f'%(self.lat/self.deg2rad)
-    print >> iff,'DECLINATION % 3.1f'%(self.dec/self.deg2rad)
+    print >> iff, 'LATITUDE % 3.1f' % (self.lat/self.deg2rad)
+    print >> iff, 'DECLINATION % 3.1f' % (self.dec/self.deg2rad)
     toprint = tuple([l/self.Hfac for l in self.Hcov])
-    print >> iff,'HOUR_ANGLE % 3.1f  % 3.1f'%toprint
+    print >> iff, 'HOUR_ANGLE % 3.1f  % 3.1f' % toprint
 
     if self.Diameters[0] != 0.0 or self.Diameters[1] != 0.0:
-      print >> iff,'DIAMETER % 3.1f  % 3.1f'%tuple(self.Diameters)
+      print >> iff, 'DIAMETER % 3.1f  % 3.1f' % tuple(self.Diameters)
 
     for ant in self.antPos:
       toprint = tuple([p*1.e3 for p in ant])
-      print >> iff,'ANTENNA  % .3e   % .3e'%toprint
+      print >> iff, 'ANTENNA  % .3e   % .3e' % toprint
 
-    self.antText.set_text('SAVED: %s'%os.path.basename(fname))
+    self.antText.set_text('SAVED: %s' % os.path.basename(fname))
     pl.draw()
     self.canvas.draw()
 
     time.sleep(3)
-    self.antText.set_text(self.fmtA%self.Nant) 
+    self.antText.set_text(self.fmtA % self.Nant)
     pl.draw()
     self.canvas.draw()
 
     iff.close()
 
-          
-    return
+  def loadArray(self, array):
 
+    antenna_file = tkFileDialog.askopenfilename(title='Load array...',
+                                                initialdir=self.arraydir)
+    self.lock = False
 
-  def loadArray(self,array):
-
-    antenna_file = tkFileDialog.askopenfilename(title='Load array...',initialdir=self.arraydir)
-    self.lock=False
-
-    if len(antenna_file)>0:
+    if len(antenna_file) > 0:
       goodread = self.readAntennas(str(antenna_file))
 
       if goodread:
-
         self.GUIres = False
-        newtext = self.fmtA%self.Nant 
+        newtext = self.fmtA % self.Nant
         self.antText.set_text(newtext)
         self.widget['diameter'].set_val(self.Diameters[0])
         self.widget['lat'].set_val(self.lat/self.deg2rad)
@@ -1839,16 +1843,19 @@ class Interferometer(object):
         self.widget['H0'].set_val(self.Hcov[0]/self.Hfac)
         self.widget['H1'].set_val(self.Hcov[1]/self.Hfac)
         self.wax['wave'].cla()
-        self.widget['wave'] = Slider(self.wax['wave'],r'$\lambda$ (mm)',self.wavelength[0]*1.e6,self.wavelength[1]*1.e6,valinit=self.wavelength[2]*1.e6)
+        self.widget['wave'] = Slider(self.wax['wave'],
+                                     r'$\lambda$ (mm)',
+                                     self.wavelength[0]*1.e6,
+                                     self.wavelength[1]*1.e6,
+                                     valinit=self.wavelength[2]*1.e6)
         self.widget['wave'].on_changed(self._changeWavelength)
         self.widget['wave'].set_val(self.wavelength[2]*1.e6)
         self.GUIres = True
 
-
         self._prepareBaselines()
         self._setBaselines()
-        self._plotModelFFT(redo=True) 
-        self._plotAntennas(redo=True,rescale=True)
+        self._plotModelFFT(redo=True)
+        self._plotAntennas(redo=True, rescale=True)
         self._plotModel(redo=True)
         self._changeCoordinates(redoUV=True)
         self.widget['wave'].set_val(self.wavelength[2]*1.e6)
@@ -1856,15 +1863,13 @@ class Interferometer(object):
         pl.draw()
         self.canvas.draw()
 
-    return
+  def loadModel(self, model):
 
+    model_file = tkFileDialog.askopenfilename(title='Load model...',
+                                              initialdir=self.modeldir)
+    self.lock = False
 
-  def loadModel(self,model):
-
-    model_file = tkFileDialog.askopenfilename(title='Load model...',initialdir=self.modeldir)
-    self.lock=False
-
-    if len(model_file)>0:
+    if len(model_file) > 0:
       goodread = self.readModels(str(model_file))
       if goodread:
         self._prepareModel()
@@ -1872,26 +1877,11 @@ class Interferometer(object):
         self._setBaselines()
         self._setBeam()
         self._changeCoordinates()
-        self._plotModelFFT(redo=True) 
+        self._plotModelFFT(redo=True)
         self._plotBeam(redo=True)
         self._plotDirty(redo=True)
         pl.draw()
         self.canvas.draw()
-
-
-    return
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 class CLEANer(object):
@@ -1900,15 +1890,14 @@ class CLEANer(object):
 
     self.parent.myCLEAN = None
     self.parent._setNoise(0.0)
-    self.parent._setGains(-1,-1,0,0,1.0)
+    self.parent._setGains(-1, -1, 0, 0, 1.0)
     self.me.destroy()
     self.residuals[:] = 0.0
     self.cleanmod[:] = 0.0
     self.cleanmodd[:] = 0.0
     self.cleanBeam[:] = 0.0
 
-
-  def __init__(self,parent):
+  def __init__(self, parent):
 
     self.parent = parent
     self.me = Tk.Toplevel(parent.tks)
@@ -1921,11 +1910,15 @@ class CLEANer(object):
     self.me.protocol("WM_DELETE_WINDOW", self.quit)
     self.Np4 = self.parent.Npix/4
 
-    self.figCL1 = pl.figure(figsize=(12,6))    
-  #  self.figCL2 = pl.figure(figsize=(6,6))    
+    self.figCL1 = pl.figure(figsize=(12, 6))
+    # self.figCL2 = pl.figure(figsize=(6,6))
 
-    self.ResidPlot = self.figCL1.add_subplot(121,aspect='equal') #pl.axes([0.01,0.43,0.5,0.5],aspect='equal')
-    self.CLEANPlot = self.figCL1.add_subplot(122,aspect='equal',sharex=self.ResidPlot,sharey=self.ResidPlot) #pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
+    self.ResidPlot = self.figCL1.add_subplot(121, aspect='equal')
+    # pl.axes([0.01,0.43,0.5,0.5],aspect='equal')
+    self.CLEANPlot = self.figCL1.add_subplot(122, aspect='equal',
+                                             sharex=self.ResidPlot,
+                                             sharey=self.ResidPlot)
+    # pl.axes([0.55,0.43,0.5,0.5],aspect='equal')
     self.ResidPlot.set_adjustable('box-forced')
     self.CLEANPlot.set_adjustable('box-forced')
 
@@ -1934,14 +1927,13 @@ class CLEANer(object):
     self.frames['GFr'] = Tk.Frame(self.me)
 
     self.canvas1 = FigureCanvasTkAgg(self.figCL1, master=self.frames['FigFr'])
-  #  self.canvas2 = FigureCanvasTkAgg(self.figCL2, master=self.frames['FigFr'])
+    # self.canvas2 = FigureCanvasTkAgg(self.figCL2, master=self.frames['FigFr'])
 
     self.canvas1.show()
-  #  self.canvas2.show()
+    # self.canvas2.show()
 
     self.frames['FigFr'].pack(side=Tk.TOP)
     self.frames['GFr'].pack(side=Tk.TOP)
-
 
     self.frames['CLOpt'] = Tk.Frame(self.frames['FigFr'])
 
@@ -1950,47 +1942,49 @@ class CLEANer(object):
     self.frames['Thres'] = Tk.Frame(self.frames['CLOpt'])
     self.frames['Sensit'] = Tk.Frame(self.frames['CLOpt'])
 
-    Gtext = Tk.Label(self.frames['Gain'],text="Gain:  ")
-    Ntext = Tk.Label(self.frames['Niter'],text="# iter:")
-    Ttext = Tk.Label(self.frames['Thres'],text="Thres (Jy/b):")
-    Stext = Tk.Label(self.frames['Sensit'],text="Sensit. (Jy/b):")
+    Gtext = Tk.Label(self.frames['Gain'], text="Gain:  ")
+    Ntext = Tk.Label(self.frames['Niter'], text="# iter:")
+    Ttext = Tk.Label(self.frames['Thres'], text="Thres (Jy/b):")
+    Stext = Tk.Label(self.frames['Sensit'], text="Sensit. (Jy/b):")
 
     self.entries = {}
     self.entries['Gain'] = Tk.Entry(self.frames['Gain'])
-    self.entries['Gain'].insert(0,"0.1")
+    self.entries['Gain'].insert(0, "0.1")
     self.entries['Gain'].config(width=5)
 
     self.entries['Niter'] = Tk.Entry(self.frames['Niter'])
-    self.entries['Niter'].insert(0,"100")
+    self.entries['Niter'].insert(0, "100")
     self.entries['Niter'].config(width=5)
 
     self.entries['Thres'] = Tk.Entry(self.frames['Thres'])
-    self.entries['Thres'].insert(0,"0.0")
+    self.entries['Thres'].insert(0, "0.0")
     self.entries['Thres'].config(width=5)
 
     self.entries['Sensit'] = Tk.Entry(self.frames['Sensit'])
-    self.entries['Sensit'].insert(0,"0.0")
+    self.entries['Sensit'].insert(0, "0.0")
     self.entries['Sensit'].config(width=5)
 
-
-
-    GTitle = Tk.Label(self.frames['GFr'],text="CALIBRATION ERROR:")
+    GTitle = Tk.Label(self.frames['GFr'], text="CALIBRATION ERROR:")
     GTitle.pack(side=Tk.TOP)
     self.frames['Ant1L'] = Tk.Frame(self.frames['GFr'])
-    Ant1T = Tk.Label(self.frames['Ant1L'],text="Ant. 1:")
+    Ant1T = Tk.Label(self.frames['Ant1L'], text="Ant. 1:")
     Ant1T.pack(side=Tk.TOP)
-    self.entries['Ant1'] = Tk.Listbox(self.frames['Ant1L'],exportselection=False,width=5)
+    self.entries['Ant1'] = Tk.Listbox(self.frames['Ant1L'],
+                                      exportselection=False,
+                                      width=5)
     self.frames['Ant2L'] = Tk.Frame(self.frames['GFr'])
-    Ant2T = Tk.Label(self.frames['Ant2L'],text="Ant. 2:")
+    Ant2T = Tk.Label(self.frames['Ant2L'], text="Ant. 2:")
     Ant2T.pack(side=Tk.TOP)
-    self.entries['Ant2'] = Tk.Listbox(self.frames['Ant2L'],exportselection=False,width=5)
+    self.entries['Ant2'] = Tk.Listbox(self.frames['Ant2L'],
+                                      exportselection=False,
+                                      width=5)
     self.entries['Ant1'].pack(side=Tk.TOP)
     self.entries['Ant2'].pack(side=Tk.TOP)
 
     self.frames['Ant1L'].pack(side=Tk.LEFT)
     self.frames['Ant2L'].pack(side=Tk.LEFT)
 
-    self.frames['space1'] = Tk.Frame(self.frames['GFr'],width=40)
+    self.frames['space1'] = Tk.Frame(self.frames['GFr'], width=40)
     self.frames['space1'].pack(side=Tk.LEFT)
 
     self.frames['H0Fr'] = Tk.Frame(self.frames['GFr'])
@@ -2003,26 +1997,36 @@ class CLEANer(object):
     self.frames['AmpFr'].pack(side=Tk.TOP)
     self.frames['PhasFr'].pack(side=Tk.TOP)
 
-
-    self.entries['H0'] = Tk.Scale(self.frames['H0Fr'],from_=0,to=self.parent.nH,orient=Tk.HORIZONTAL,length=200)
-    self.entries['H1'] = Tk.Scale(self.frames['H1Fr'],from_=0,to=self.parent.nH,orient=Tk.HORIZONTAL,length=200)
-    H0Text = Tk.Label(self.frames['H0Fr'],text="From integration #: ",width=15)
-    H1Text = Tk.Label(self.frames['H1Fr'],text="To integration #: ",width=15)
+    self.entries['H0'] = Tk.Scale(self.frames['H0Fr'], from_=0,
+                                  to=self.parent.nH, orient=Tk.HORIZONTAL,
+                                  length=200)
+    self.entries['H1'] = Tk.Scale(self.frames['H1Fr'], from_=0,
+                                  to=self.parent.nH, orient=Tk.HORIZONTAL,
+                                  length=200)
+    H0Text = Tk.Label(self.frames['H0Fr'], text="From integration #: ",
+                      width=15)
+    H1Text = Tk.Label(self.frames['H1Fr'], text="To integration #: ",
+                      width=15)
     H0Text.pack(side=Tk.LEFT)
     self.entries['H0'].pack(side=Tk.RIGHT)
     H1Text.pack(side=Tk.LEFT)
     self.entries['H1'].pack(side=Tk.RIGHT)
     self.entries['H1'].set(self.parent.nH)
 
-    self.entries['Amp'] = Tk.Scale(self.frames['AmpFr'],from_=0.1,to=1000.,orient=Tk.HORIZONTAL,length=200)
-    self.entries['Phas'] = Tk.Scale(self.frames['PhasFr'],from_=-180.,to=180.,orient=Tk.HORIZONTAL,length=200)
-    AmpText = Tk.Label(self.frames['AmpFr'],text="Amplitude gain (%): ",width=15)
-    PhasText = Tk.Label(self.frames['PhasFr'],text="Phase Gain: ",width=15)
+    self.entries['Amp'] = Tk.Scale(self.frames['AmpFr'],
+                                   from_=0.1, to=1000.,
+                                   orient=Tk.HORIZONTAL, length=200)
+    self.entries['Phas'] = Tk.Scale(self.frames['PhasFr'],
+                                    from_=-180., to=180.,
+                                    orient=Tk.HORIZONTAL, length=200)
+    AmpText = Tk.Label(self.frames['AmpFr'], text="Amplitude gain (%): ",
+                       width=15)
+    PhasText = Tk.Label(self.frames['PhasFr'], text="Phase Gain: ",
+                        width=15)
     AmpText.pack(side=Tk.LEFT)
     self.entries['Amp'].pack(side=Tk.RIGHT)
     PhasText.pack(side=Tk.LEFT)
     self.entries['Phas'].pack(side=Tk.RIGHT)
-
 
     Gtext.pack(side=Tk.LEFT)
     self.entries['Gain'].pack(side=Tk.RIGHT)
@@ -2036,26 +2040,44 @@ class CLEANer(object):
     Stext.pack(side=Tk.LEFT)
     self.entries['Sensit'].pack(side=Tk.RIGHT)
 
-
     self.frames['CLOpt'].pack(side=Tk.LEFT)
-#    self.canvas2.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
-    self.canvas1.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
+    # self.canvas2.get_tk_widget().pack(side=Tk.LEFT) #, fill=Tk.BOTH, expand=1)
+    self.canvas1.get_tk_widget().pack(side=Tk.LEFT)  #, fill=Tk.BOTH, expand=1)
 
     self.buttons = {}
-    self.buttons['Noise'] = Tk.Button(self.frames['CLOpt'],text="Redo Noise",command=self._ReNoise)
-    self.buttons['clean'] = Tk.Button(self.frames['CLOpt'],text="CLEAN",command=self._CLEAN)
-    self.buttons['reset'] = Tk.Button(self.frames['CLOpt'],text="RELOAD",command=self._reset)
-    self.buttons['addres'] = Tk.Button(self.frames['CLOpt'],text="+/- Resid",command=self._AddRes)
-    self.buttons['dorestore'] = Tk.Button(self.frames['CLOpt'],text="(Un)restore",command=self._doRestore)
-    self.buttons['dorescale'] = Tk.Button(self.frames['CLOpt'],text="Rescale",command=self._doRescale)
+    self.buttons['Noise'] = Tk.Button(self.frames['CLOpt'],
+                                      text="Redo Noise",
+                                      command=self._ReNoise)
+    self.buttons['clean'] = Tk.Button(self.frames['CLOpt'],
+                                      text="CLEAN",
+                                      command=self._CLEAN)
+    self.buttons['reset'] = Tk.Button(self.frames['CLOpt'],
+                                      text="RELOAD",
+                                      command=self._reset)
+    self.buttons['addres'] = Tk.Button(self.frames['CLOpt'],
+                                       text="+/- Resid",
+                                       command=self._AddRes)
+    self.buttons['dorestore'] = Tk.Button(self.frames['CLOpt'],
+                                          text="(Un)restore",
+                                          command=self._doRestore)
+    self.buttons['dorescale'] = Tk.Button(self.frames['CLOpt'],
+                                          text="Rescale",
+                                          command=self._doRescale)
 
-    self.buttons['showfft'] = Tk.Button(self.frames['CLOpt'],text="Show FFT",command=self._showFFT)
-    self.buttons['convsource'] = Tk.Button(self.frames['CLOpt'],text="True source (conv.)",command=self._convSource)
+    self.buttons['showfft'] = Tk.Button(self.frames['CLOpt'],
+                                        text="Show FFT",
+                                        command=self._showFFT)
+    self.buttons['convsource'] = Tk.Button(self.frames['CLOpt'],
+                                           text="True source (conv.)",
+                                           command=self._convSource)
 
-
-    self.buttons['apply'] = Tk.Button(self.frames['GFr'],text="APPLY GAIN",command=self._ApplyGain)
+    self.buttons['apply'] = Tk.Button(self.frames['GFr'],
+                                      text="APPLY GAIN",
+                                      command=self._ApplyGain)
     self.buttons['apply'].pack(side=Tk.RIGHT)
-    self.buttons['recal'] = Tk.Button(self.frames['GFr'],text="RESET GAIN",command=self._reCalib)
+    self.buttons['recal'] = Tk.Button(self.frames['GFr'],
+                                      text="RESET GAIN",
+                                      command=self._reCalib)
     self.buttons['recal'].pack(side=Tk.RIGHT)
 
     self.frames['Gain'].pack(side=Tk.TOP)
@@ -2070,30 +2092,30 @@ class CLEANer(object):
     self.buttons['showfft'].pack(side=Tk.TOP)
     self.buttons['convsource'].pack(side=Tk.TOP)
 
-    separator = Tk.Frame(self.frames['CLOpt'],height=4, bd=5, relief=Tk.SUNKEN)
-    separator.pack(fill=Tk.X, padx=10, pady=20,side=Tk.TOP)
+    separator = Tk.Frame(self.frames['CLOpt'], height=4,
+                         bd=5, relief=Tk.SUNKEN)
+    separator.pack(fill=Tk.X, padx=10, pady=20, side=Tk.TOP)
 
     self.frames['Sensit'].pack(side=Tk.TOP)
     self.buttons['Noise'].pack(side=Tk.TOP)
 
     self.canvas1.mpl_connect('pick_event', self._onPick)
     self.canvas1.mpl_connect('motion_notify_event', self._doMask)
-    self.canvas1.mpl_connect('button_release_event',self._onRelease)
-    self.canvas1.mpl_connect('button_press_event',self._onPress)
+    self.canvas1.mpl_connect('button_release_event', self._onRelease)
+    self.canvas1.mpl_connect('button_press_event', self._onPress)
     self.canvas1.mpl_connect('key_press_event', self.parent._onKeyPress)
 
- #   toolbar_frame = Tk.Frame(self.me)
- #   toolbar = NavigationToolbar2TkAgg(self.canvas1, toolbar_frame)
- #   toolbar_frame.pack(side=Tk.LEFT)
+    # toolbar_frame = Tk.Frame(self.me)
+    # toolbar = NavigationToolbar2TkAgg(self.canvas1, toolbar_frame)
+    # toolbar_frame.pack(side=Tk.LEFT)
 
     self.pressed = -1
-    self.xy0 = [0,0]
+    self.xy0 = [0, 0]
     self.moved = False
     self.resadd = False
     self.dorestore = True
     self._makeMask()
     self._reCalib()
-
 
   def _ReNoise(self):
     try:
