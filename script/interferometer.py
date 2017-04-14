@@ -36,7 +36,7 @@ import matplotlib.image as plimg
 
 try:
     import Tkinter as Tk
-except:
+except ImportError:
     import tkinter as Tk
 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -348,6 +348,9 @@ class Interferometer(object):
     self.widget['add'] = Button(self.wax['add'], r'+ Antenna')
     self.widget['rem'] = Button(self.wax['rem'], r'- Antenna')
     self.widget['reduce'] = Button(self.wax['reduce'], r'Reduce data')
+    reduce_label = self.widget['reduce'].label
+    reduce_label.set_fontsize(14)
+    reduce_label.set_weight('bold')
     self.widget['save'] = Button(self.wax['save'], 'Save array')
     self.widget['loadarr'] = Button(self.wax['loadarr'], 'Load array')
     self.widget['loadmod'] = Button(self.wax['loadmod'], 'Load model')
