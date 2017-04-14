@@ -231,15 +231,23 @@ class Interferometer(object):
       self.tks.config(menu=menubar)
       self.canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
 
-    self.antPlot = self.figUV.add_subplot(231, aspect='equal')
+    # UVPlot not visible. Note antPlot would overlaps UVPlot
+    show_uvplot = False
     self.UVPlot = self.figUV.add_subplot(232, aspect='equal',
                                          axisbg=(0.4, 0.4, 0.4))
-    self.beamPlot = self.figUV.add_subplot(233, aspect='equal')
-    self.modelPlot = self.figUV.add_subplot(235, aspect='equal')
-    self.dirtyPlot = self.figUV.add_subplot(236, aspect='equal')
-
-    self.spherePlot = pl.axes([0.53, 0.82, 0.12, 0.12],
+    sphere_dim = 0.12
+    if not show_uvplot:
+        sphere_dim = 0
+    self.spherePlot = pl.axes([0.19, 0.82, sphere_dim, sphere_dim],
                               projection='3d', aspect='equal')
+    if not show_uvplot:
+        self.UVPlot.set_visible(False)
+        self.spherePlot.set_visible(False)
+
+    self.antPlot = self.figUV.add_subplot(232, aspect='equal')
+    self.beamPlot = self.figUV.add_subplot(236, aspect='equal')
+    self.modelPlot = self.figUV.add_subplot(234, aspect='equal')
+    self.dirtyPlot = self.figUV.add_subplot(235, aspect='equal')
 
     u = np.linspace(0, 2 * np.pi, 100)
     v = np.linspace(0, np.pi, 100)
@@ -279,24 +287,48 @@ class Interferometer(object):
 
     self.wax = {}
     self.widget = {}
-    self.wax['lat'] = pl.axes([0.07, 0.45, 0.25, 0.04])
-    self.wax['dec'] = pl.axes([0.07, 0.40, 0.25, 0.04])
-    self.wax['H0'] = pl.axes([0.07, 0.35, 0.25, 0.04])
-    self.wax['H1'] = pl.axes([0.07, 0.30, 0.25, 0.04])
-    self.wax['wave'] = pl.axes([0.07, 0.25, 0.25, 0.04])
-    self.wax['robust'] = pl.axes([0.07, 0.20, 0.25, 0.04])
-    self.wax['add'] = pl.axes([0.07, 0.14, 0.08, 0.05])
-    self.wax['rem'] = pl.axes([0.155, 0.14, 0.08, 0.05])
-    self.wax['reduce'] = pl.axes([0.24, 0.14, 0.08, 0.05])
-    self.wax['save'] = pl.axes([0.07, 0.08, 0.08, 0.05])
-    self.wax['loadarr'] = pl.axes([0.155, 0.08, 0.08, 0.05])
-    self.wax['quit'] = pl.axes([0.155, 0.02, 0.08, 0.05])
-    self.wax['loadmod'] = pl.axes([0.24, 0.08, 0.08, 0.05])
-    self.wax['gammacorr'] = pl.axes([0.46, 0.08, 0.13, 0.02], axisbg='white')
-    self.wax['diameter'] = pl.axes([0.825, 0.08, 0.10, 0.02], axisbg='white')
+
+    # Place bars for latitude, dec, wave, robust, etc.
+    # offsets wrt (original) bottom left panel
+    bars_x = 0.63
+    bars_y = 0.5 - 0.08  # -0.08 to re-center vertically for now
+    self.wax['lat'] = pl.axes([bars_x + 0.07, bars_y + 0.45, 0.25, 0.04])
+    self.wax['dec'] = pl.axes([bars_x + 0.07, bars_y + 0.40, 0.25, 0.04])
+    self.wax['H0'] = pl.axes([bars_x + 0.07, bars_y + 0.35, 0.25, 0.04])
+    self.wax['H1'] = pl.axes([bars_x + 0.07, bars_y + 0.30, 0.25, 0.04])
+    self.wax['wave'] = pl.axes([bars_x + 0.07, bars_y + 0.25, 0.25, 0.04])
+    self.wax['robust'] = pl.axes([bars_x + 0.07, bars_y + 0.20, 0.25, 0.04])
+
+    # Place buttons
+    # offsets wrt (original) bottom left panel
+    # 3 x rows: +0.07, 0.155, 0.24
+    but_x = 0
+    but_y = 0.5
+    self.wax['loadarr'] = pl.axes([but_x + 0.07, but_y + 0.38, 0.10, 0.05])
+    self.wax['save'] = pl.axes([but_x + 0.07, but_y + 0.32, 0.10, 0.05])
+    self.wax['loadmod'] = pl.axes([but_x + 0.07, but_y + 0.26, 0.10, 0.05])
+    self.wax['add'] = pl.axes([but_x + 0.28, but_y + 0.38, 0.08, 0.05])
+    self.wax['rem'] = pl.axes([but_x + 0.28, but_y + 0.32, 0.08, 0.05])
+    self.wax['reduce'] = pl.axes([but_x + 0.12, but_y + 0.08, 0.16, 0.05])
+    have_quit = False
+    if have_quit:
+        self.wax['quit'] = pl.axes([but_x + 0.155, but_y + 0.02, 0.08, 0.05])
+
+    # Place plot output bars/labels
+    # for the model image
+    # offsets wrt (original) bottom center panel
+    gamma_x = -0.33
+    gamma_y = 0
+    self.wax['gammacorr'] = pl.axes([gamma_x + 0.46, gamma_y + 0.08, 0.13, 0.02], axisbg='white')
+    # for the dirty image
+    # offsets wrt (original) bottom center panel
+    dirty_x = -0.33
+    dirty_y = 0
+    self.wax['diameter'] = pl.axes([dirty_x + 0.825, dirty_y + 0.08, 0.10, 0.02], axisbg='white')
+
     self.wax['subarrwgt'] = pl.axes([0.15, 0.58, 0.12, 0.02], axisbg='white')
-    self.widget['robust'] = Slider(self.wax['robust'], r'Robust',
-                                   -2., 2., valinit=0.0)
+
+    # create widgets for bars
     self.widget['lat'] = Slider(self.wax['lat'], r'Lat (deg)',
                                 -90., 90., valinit=self.lat / self.deg2rad)
     self.widget['dec'] = Slider(self.wax['dec'], r'Dec (deg)',
@@ -309,13 +341,20 @@ class Interferometer(object):
                                  self.wavelength[0]*1.e6,
                                  self.wavelength[1]*1.e6,
                                  valinit=self.wavelength[2]*1.e6)
+    self.widget['robust'] = Slider(self.wax['robust'], r'Robust',
+                                   -2., 2., valinit=0.0)
+
+    # create widgets for buttons
     self.widget['add'] = Button(self.wax['add'], r'+ Antenna')
-    self.widget['rem'] = Button(self.wax['rem'], r'$-$ Antenna')
+    self.widget['rem'] = Button(self.wax['rem'], r'- Antenna')
     self.widget['reduce'] = Button(self.wax['reduce'], r'Reduce data')
     self.widget['save'] = Button(self.wax['save'], 'Save array')
     self.widget['loadarr'] = Button(self.wax['loadarr'], 'Load array')
     self.widget['loadmod'] = Button(self.wax['loadmod'], 'Load model')
-    self.widget['quit'] = Button(self.wax['quit'], 'Quit')
+    if have_quit:
+        self.widget['quit'] = Button(self.wax['quit'], 'Quit')
+
+    # create widgets for output bars/labels
     self.widget['gammacorr'] = Slider(self.wax['gammacorr'],
                                       'gamma', 0.1, 1.0, valinit=self.gamma,
                                       color='red')
@@ -330,20 +369,26 @@ class Interferometer(object):
     self.widget['subarrwgt'] = Slider(self.wax['subarrwgt'], 'log(W1/W2)',
                                       -4, 4, valinit=0, color='red')
 
-    self.widget['robust'].on_changed(self._onRobust)
+    # set on_ methods for bars
     self.widget['lat'].on_changed(self._onKeyLat)
     self.widget['dec'].on_changed(self._onKeyDec)
     self.widget['H0'].on_changed(self._onKeyH0)
     self.widget['H1'].on_changed(self._onKeyH1)
     self.widget['wave'].on_changed(self._changeWavelength)
+    self.widget['robust'].on_changed(self._onRobust)
+
+    # set on_ methods for buttons
     self.widget['add'].on_clicked(self._addAntenna)
     self.widget['rem'].on_clicked(self._removeAntenna)
     self.widget['save'].on_clicked(self.saveArray)
     self.widget['loadarr'].on_clicked(self.loadArray)
     self.widget['loadmod'].on_clicked(self.loadModel)
     self.widget['gammacorr'].on_changed(self._gammacorr)
-    self.widget['quit'].on_clicked(self.quit)
+    if have_quit:
+        self.widget['quit'].on_clicked(self.quit)
     self.widget['reduce'].on_clicked(self._reduce)
+
+    # set on_ methods for output bars/labels
     self.widget['subarrwgt'].on_changed(self._subarrwgt)
     self.widget['diameter'].on_changed(self._setDiameter)
 

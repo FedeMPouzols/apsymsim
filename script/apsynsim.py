@@ -30,7 +30,7 @@ except:
 
 import interferometer
 
-__version__ = '2.0-b'
+__version__ = '2.1-a'
 
 if __name__ == "__main__":
 
