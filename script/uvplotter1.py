@@ -1,6 +1,6 @@
 #############################################################################
 #
-#    APSYNSIM: A real-time Aperture Synthesis Simulator
+#    This file is part of APSYNSIM: A real-time Aperture Synthesis Simulator
 #
 #    Copyright (C) 2014  Ivan Marti-Vidal (Nordic ARC Node, OSO, Sweden)
 #
