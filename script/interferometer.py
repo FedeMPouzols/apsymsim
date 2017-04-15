@@ -245,7 +245,13 @@ class Interferometer(object):
         self.spherePlot.set_visible(False)
 
     self.antPlot = self.figUV.add_subplot(232, aspect='equal')
+    # beamPlot (this is dirty-beam) not visible (bottom-right panel).
+    # This space is currently used for the clean image
+    show_beamPlot = False
     self.beamPlot = self.figUV.add_subplot(236, aspect='equal')
+    if not show_beamPlot:
+        self.beamPlot.set_visible(False)
+
     self.modelPlot = self.figUV.add_subplot(234, aspect='equal')
     self.dirtyPlot = self.figUV.add_subplot(235, aspect='equal')
 
