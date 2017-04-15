@@ -104,6 +104,300 @@ Enjoy!
 
 """
 
+import scipy.optimize as spfit
+
+class SimpleCleanImg(object):
+    """ Simplified clean image. Does the clean-image calculations and shows
+    results onto one of the subaxes of the 'parent'. Assumes too much about
+    the 'parent'. Requires among other things parent.cleanPlot."""
+
+    def __init__(self, parent, plot_axis):
+        self.parent = parent
+        self.plot_axis = plot_axis
+        self.frames = {}
+        self.cleanmod = None
+        self.cleanmodd = None
+        self.cleanBeam = None
+        self.BeamTxt = ''
+        self._recalib()
+
+    def __del__(self):
+        self.residuals[:] = 0.0
+        self.cleanmod[:] = 0.0
+        self.cleanmodd[:] = 0.0
+        self.cleanBeam[:] = 0.0
+
+    def _make_mask(self):
+        self.mask = np.zeros(np.shape(self.parent.beam))
+        self.bmask = np.zeros(np.shape(self.parent.beam)).astype(np.bool)
+
+    def _recalib(self):
+        self.entries = {}
+        self.entries['Gain'] = 0.1
+        self.entries['Niter'] = 100
+        self.entries['Thres'] = 0.0
+
+        self.entries['Ant1'] = 0
+        self.entries['Ant2'] = 0
+        self.entries['H0'] = 0
+        self.entries['H1'] = self.parent.nH
+        self.entries['Amp'] = 100
+        self.entries['Phas'] = 0
+
+        self.parent._setGains(-1, -1, 0, 0, 1.0)
+        self._reset()
+
+    def _reset(self, donoise=False):
+
+        self.Np4 = self.parent.Npix/4
+
+        self.dorestore = True
+
+        self.fmtD2 = r'% .2e Jy/beam at point' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f ' "\n" r'Peak: % 4.2f Jy/beam ; rms: % 4.2f Jy/beam'
+        self.fmtDC = r'Model: % .2e Jy/beam at point' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f ' "\n" r'Peak: % 4.2f Jy/beam ; Dyn. Range: % 4.2f'
+
+        dslice = self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,
+                                      self.Np4:self.parent.Npix-self.Np4]
+        modflux = self.parent.dirtymap[self.parent.Nphf, self.parent.Nphf]
+        self.RMS = np.sqrt(np.var(dslice) + np.average(dslice)**2.)
+        self.PEAK = np.max(dslice)
+        self.CLEANPEAK = 0.0
+        self.pickcoords = [self.parent.Nphf, self.parent.Nphf, 0., 0.]
+
+        self.Xaxmax = float(self.parent.Xaxmax)
+        self.residuals = np.copy(self.parent.dirtymap)
+        self.cleanmod = np.zeros(np.shape(self.parent.dirtymap))
+        self.cleanmodd = np.zeros(np.shape(self.parent.dirtymap))
+
+        self.parent.cleanPlot.cla()
+        self.CLEANPlotPlot = self.parent.cleanPlot.imshow(self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,
+                                                                        self.Np4:self.parent.Npix-self.Np4],
+                                                   interpolation='nearest',
+                                                   picker=True,
+                                                   cmap=self.parent.currcmap)
+
+        self.CLEANText = self.parent.cleanPlot.text(0.05, 0.78,
+                                                    self.fmtDC % (0.0, 0.0, 0.0, 0., 0.),
+                                                    transform=self.parent.cleanPlot.transAxes,
+                                                    bbox=dict(facecolor='white',
+                                                              alpha=0.7),
+                                                    fontsize=10,
+                                                    verticalalignment='bottom')
+
+        pl.setp(self.CLEANPlotPlot, extent=(self.parent.Xaxmax/2.,
+                                            -self.parent.Xaxmax/2.,
+                                            -self.parent.Xaxmax/2.,
+                                            self.parent.Xaxmax/2.))
+        self.parent.cleanPlot.set_ylabel('Dec offset (as)')
+        self.parent.cleanPlot.set_xlabel('RA offset (as)')
+        # more dynamic than self.parent.cleanPlot.set_title('CLEAN (0 ITER)')
+        self.CLEANTitle = self.parent.cleanPlot.text(0.5, 1.02,
+                                                    'CLEAN ( 0 ITER)',
+                                                     transform=self.parent.cleanPlot.transAxes,
+                                                     backgroundcolor=self.parent.figUV.get_facecolor(),
+                                                     verticalalignment='bottom',
+                                                     horizontalalignment='center',
+                                                     fontsize=14)
+
+        self.CLEANPlotPlot.set_array(self.cleanmod[self.Np4:self.parent.Npix-self.Np4,
+                                                   self.Np4:self.parent.Npix-self.Np4])
+
+        self.parent.cleanPlot.set_xlim((self.parent.curzoom[1][0],
+                                 self.parent.curzoom[1][1]))
+        self.parent.cleanPlot.set_ylim((self.parent.curzoom[1][2],
+                                 self.parent.curzoom[1][3]))
+
+        self.totiter = 0
+
+        # DERIVE THE CLEAN BEAM
+        MainLobe = np.where(self.parent.beam > 0.6)
+        self.cleanBeam = np.zeros(np.shape(self.residuals))
+
+        if len(MainLobe[0]) < 5:
+            showinfo('ERROR!',
+                     'The main lobe of the PSF is too narrow!\n CLEAN model will not be restored')
+            self.cleanBeam[:] = 0.0
+            self.cleanBeam[self.parent.Npix/2, self.parent.Npix/2] = 1.0
+        else:
+            dX = MainLobe[0]-self.parent.Npix/2
+            dY = MainLobe[1]-self.parent.Npix/2
+
+            try:
+                fit = spfit.leastsq(lambda x:
+                                    np.exp(-(dX*dX*x[0]+dY*dY*x[1]+dX*dY*x[2]))-self.parent.beam[MainLobe],
+                                    [1., 1., 0.])
+                Pang = 180./np.pi*(np.arctan2(fit[0][2],
+                                              (fit[0][0]-fit[0][1]))/2.)
+                AmB = fit[0][2]/np.sin(2.*np.pi/180.*Pang)
+                ApB = fit[0][0]+fit[0][1]
+                A = 2.355*(2./(ApB + AmB))**0.5*self.parent.imsize/self.parent.Npix
+                B = 2.355*(2./(ApB - AmB))**0.5*self.parent.imsize/self.parent.Npix
+                if A < B:
+                    A, B = B, A
+                    Pang = Pang - 90.
+                if Pang < -90.:
+                    Pang += 180.
+                if Pang > 90.:
+                    Pang -= 180.
+
+                if B > 0.1:
+                    self.Beamtxt = '%.1f x %.1f as (PA = %.1f deg.)' % (A, B, Pang)
+                else:
+                    self.Beamtxt = '%.1f x %.1f mas (PA = %.1f deg.)' % (1000.*A,
+                                                                         1000.*B,
+                                                                         Pang)
+
+                self.CLEANText.set_text(self.fmtDC % (0., 0., 0., 0., 0.) +
+                                '\n' + self.Beamtxt)
+                # print('BEAM FIT: ',fit[0], A, B, Pang)
+                ddX = np.outer(np.ones(self.parent.Npix),
+                               np.arange(-self.parent.Npix/2,
+                                         self.parent.Npix/2).astype(np.float64))
+                ddY = np.outer(np.arange(-self.parent.Npix/2,
+                                         self.parent.Npix/2).astype(np.float64),
+                               np.ones(self.parent.Npix))
+
+                self.cleanBeam[:] = np.exp(-(ddY*ddY*fit[0][0] +
+                                             ddX*ddX*fit[0][1] +
+                                             ddY*ddX*fit[0][2]))
+
+                del ddX, ddY
+
+            except Exception as exc:
+                showinfo('ERROR!',
+                         'Problems fitting the PSF main lobe!\n'
+                         'CLEAN model will not be restored. Details: {}'.format(exc))
+                self.cleanBeam[:] = 0.0
+                self.cleanBeam[self.parent.Npix/2, self.parent.Npix/2] = 1.0
+
+        self.resadd = False
+        self.dorestore = True
+        self.ffti = False
+
+        self.totalClean = 0.0
+
+        if donoise:
+            self._ReNoise()
+
+        pl.draw()
+
+    def do_clean(self, pre_iter=None):
+        self._make_mask()
+
+        if np.sum(self.bmask) == 0:
+            goods = np.ones(np.shape(self.bmask)).astype(np.bool)
+            tempres = self.residuals
+        else:
+            goods = self.bmask
+            tempres = self.residuals*self.mask
+
+        psf = self.parent.beam
+
+        try:
+            gain = float(self.entries['Gain'])
+            if pre_iter is not None:
+                niter = pre_iter
+            else:
+                niter = int(self.entries['Niter'])
+            thrs = float(self.entries['Thres'])
+        except:
+            showinfo('ERROR!',
+                     'Please, check the content of Gain, # Iter, and Thres!\nShould be numbers!')
+            return
+
+        self.parent.figUV.canvas.draw()
+
+        for i in range(niter):
+            self.totiter += 1
+
+            if thrs != 0.0:
+                tempres[tempres < thrs] = 0.0
+                if thrs < 0.0:
+                    tempres = np.abs(tempres)
+
+                if np.sum(tempres) == 0.0:
+                    showinfo('INFO', 'Threshold reached in CLEAN masks!')
+                    break
+
+            rslice = self.residuals[self.Np4:self.parent.Npix-self.Np4,
+                                    self.Np4:self.parent.Npix-self.Np4]
+            peakpos = np.unravel_index(np.argmax(tempres),
+                                       np.shape(self.residuals))
+            peakval = self.residuals[peakpos[0], peakpos[1]]
+            self.residuals -= gain*peakval*np.roll(np.roll(psf,
+                                                           peakpos[0]-self.parent.Npix/2,
+                                                           axis=0),
+                                                   peakpos[1]-self.parent.Npix/2,
+                                                   axis=1)
+            tempres[goods] = self.residuals[goods]
+            # MODIFY CLEAN MODEL!!
+            self.cleanmodd[peakpos[0], peakpos[1]] += gain*peakval
+            self.cleanmod += gain*peakval*np.roll(np.roll(self.cleanBeam,
+                                                          peakpos[0]-self.parent.Npix/2,
+                                                          axis=0),
+                                                  peakpos[1]-self.parent.Npix/2,
+                                                  axis=1)
+            # self.ResidPlotPlot.set_array(rslice)
+
+            self.CLEANPEAK = np.max(self.cleanmod)
+            self.totalClean += gain*peakval
+            # self.parent.cleanPlot.set_title('CLEAN (%i ITER): %.2e Jy' % (self.totiter,
+            #                                                               self.totalClean))
+            self.CLEANTitle.set_text('CLEAN (%i ITER): %.2e Jy' % (self.totiter,
+                                                                   self.totalClean))
+
+            xi, yi, RA, Dec = self.pickcoords
+
+            if self.dorestore:
+                if self.resadd:
+                    toadd = (self.cleanmod + self.residuals)
+                else:
+                    toadd = self.cleanmod
+            else:
+                toadd = self.cleanmodd
+
+            clFlux = toadd[xi, yi]
+
+            self.CLEANPlotPlot.set_array(
+                toadd[self.Np4:self.parent.Npix-self.Np4,
+                      self.Np4:self.parent.Npix-self.Np4])
+            self.CLEANPlotPlot.norm.vmin = np.min(
+                toadd[self.Np4:self.parent.Npix-self.Np4,
+                      self.Np4:self.parent.Npix-self.Np4])
+            self.CLEANPlotPlot.norm.vmax = np.max(
+                toadd[self.Np4:self.parent.Npix-self.Np4,
+                      self.Np4:self.parent.Npix-self.Np4])
+
+            self.RMS = np.sqrt(np.var(rslice)+np.average(rslice)**2.)
+            self.PEAK = np.max(rslice)
+
+            self.CLEANText.set_text(self.fmtDC % (clFlux, RA, Dec, self.CLEANPEAK,
+                                                  self.CLEANPEAK/self.RMS)+'\n'+self.Beamtxt)
+
+            # This is to avoid a full pl.draw() which is much slower as
+            # it refreshes the whole pictures, all panels
+            # Consider using matplotlib.animations in the future
+            self.CLEANTitle.set_text('CLEAN (%i ITER): %.2e Jy' % (self.totiter,
+                                                                   self.totalClean))
+
+            self.parent.cleanPlot.draw_artist(self.CLEANPlotPlot)
+            self.parent.cleanPlot.draw_artist(self.CLEANText)
+            self.parent.cleanPlot.draw_artist(self.CLEANTitle)
+            # blit does not update axes, titles, legends, etc.
+            # Also, blit with cleanPlot.bbox would leave out the title
+            # self.parent.figUV.canvas.blit(self.parent.cleanPlot.bbox)
+            bbox_title = mpl.transforms.TransformedBbox(mpl.transforms.Bbox.from_extents([0, 0, 1, 1.1]), self.parent.cleanPlot.transAxes)
+            self.parent.figUV.canvas.blit(bbox_title)
+
+        # Re-draw all if threshold reached:
+        pl.draw()
+
+        del tempres, psf, goods
+        try:
+            del toadd
+        except:
+            pass
+
 
 class Interferometer(object):
 
@@ -134,7 +428,7 @@ class Interferometer(object):
     self.GUIres = True  # Make some parts of the GUI respond to events
     self.antLock = False  # Lock antenna-update events
 
-    self.my_cleaner = None   # Cleaner instance (when initialized)
+    self.my_cleaner = None   # Cleaner window instance (when initialized)
 
 # Default of defaults!
     nH = 200
@@ -194,7 +488,7 @@ class Interferometer(object):
 
     self.readModels(str(model_file))
     self.readAntennas(str(antenna_file))
-    self.GUI()  # makefigs=makefigs)
+    self.init_GUI()  # makefigs=makefigs)
 
   def showError(self, message):
     showinfo('ERROR!', message)
@@ -211,7 +505,7 @@ class Interferometer(object):
     helptext.pack()
     Tk.Button(win, text='OK', command=win.destroy).pack()
 
-  def GUI(self):  # ,makefigs=True):
+  def init_GUI(self):  # ,makefigs=True):
 
     mpl.rcParams['toolbar'] = 'None'
 
@@ -247,13 +541,19 @@ class Interferometer(object):
     self.antPlot = self.figUV.add_subplot(232, aspect='equal')
     # beamPlot (this is dirty-beam) not visible (bottom-right panel).
     # This space is currently used for the clean image
-    show_beamPlot = False
-    self.beamPlot = self.figUV.add_subplot(236, aspect='equal')
-    if not show_beamPlot:
+    self.show_beamPlot = False
+    self.beamPlot = self.figUV.add_subplot(231, aspect='equal')
+    self.beamText = self.beamPlot.text(0.05, 0.80, '',
+                                       transform=self.beamPlot.transAxes,
+                                       bbox=dict(facecolor='white', alpha=0.7))
+    if not self.show_beamPlot:
         self.beamPlot.set_visible(False)
 
     self.modelPlot = self.figUV.add_subplot(234, aspect='equal')
     self.dirtyPlot = self.figUV.add_subplot(235, aspect='equal')
+
+    self.cleanPlot = self.figUV.add_subplot(236, aspect='equal')
+    self.cleanPlot.set_adjustable('box-forced')
 
     u = np.linspace(0, 2 * np.pi, 100)
     v = np.linspace(0, np.pi, 100)
@@ -334,7 +634,11 @@ class Interferometer(object):
     dirty_y = 0
     self.wax['diameter'] = pl.axes([dirty_x + 0.825, dirty_y + 0.08, 0.10, 0.02], axisbg='white')
 
-    self.wax['subarrwgt'] = pl.axes([0.15, 0.58, 0.12, 0.02], axisbg='white')
+    # log(W1/W2) bar when visible for the array
+    arr_x = 0.33
+    arr_y = 0
+    self.wax['subarrwgt'] = pl.axes([arr_x + 0.15, arr_y + 0.58,
+                                     0.12, 0.02], axisbg='white')
 
     # create widgets for bars
     self.widget['lat'] = Slider(self.wax['lat'], r'Lat (deg)',
@@ -399,7 +703,7 @@ class Interferometer(object):
     if have_quit:
         self.widget['quit'].on_clicked(self.quit)
     self.widget['reduce'].on_clicked(self._reduce)
-    self.widget['clean'].on_clicked(self._reduce)
+    self.widget['clean'].on_clicked(self._clean_img)
 
     # set on_ methods for output bars/labels
     self.widget['subarrwgt'].on_changed(self._subarrwgt)
@@ -416,7 +720,15 @@ class Interferometer(object):
     self._plotDirty()
     self._plotModelFFT()
 
+    self._init_clean_img()
+
     self.canvas.draw()
+
+  def _init_clean_img(self):
+    # The cleaner with functionality separated from GUI
+    self.my_clean_img = SimpleCleanImg(self, self.cleanPlot)
+    # calculate and plot clean image - just 1 iteration
+    self.my_clean_img.do_clean(pre_iter=0)
 
   def _setDiameter(self, diam):
 
@@ -429,6 +741,15 @@ class Interferometer(object):
 
     if self.tks is not None:
       self.my_cleaner = cleaner.Cleaner(self)
+
+  def _clean_img(self, event):
+
+    if self.my_clean_img is not None:
+        self.cleanPlot.set_xlim((self.curzoom[1][0],
+                                 self.curzoom[1][1]))
+        self.cleanPlot.set_ylim((self.curzoom[1][2],
+                                 self.curzoom[1][3]))
+        self.my_clean_img.do_clean()
 
   def readAntennas(self, antenna_file):
 
@@ -738,8 +1059,8 @@ class Interferometer(object):
     self.totsampling2 = np.zeros((self.Npix, self.Npix), dtype=np.float32)
     self.dirtymap2 = np.zeros((self.Npix, self.Npix), dtype=np.float32)
     self.robustsamp2 = np.zeros((self.Npix, self.Npix), dtype=np.float32)
-  #  self.Gsampling2 = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
-  #  self.Grobustsamp2 = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
+    # self.Gsampling2 = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
+    # self.Grobustsamp2 = np.zeros((self.Npix,self.Npix),dtype=np.complex64)
 
   def _prepareBaselines(self):
 
@@ -1268,6 +1589,9 @@ class Interferometer(object):
     self.UVPlot.set_ylabel(self.vlab)
 
   def _plotBeam(self, redo=True):
+
+    if not self.show_beamPlot:
+        return
 
     Np4 = self.Npix/4
     if redo:
@@ -1826,6 +2150,8 @@ class Interferometer(object):
         self._changeCoordinates(redoUV=True)
         self.widget['wave'].set_val(self.wavelength[2]*1.e6)
 
+        self._init_clean_img()
+
         pl.draw()
         self.canvas.draw()
 
@@ -1846,5 +2172,8 @@ class Interferometer(object):
         self._plotModelFFT(redo=True)
         self._plotBeam(redo=True)
         self._plotDirty(redo=True)
+
+        self._init_clean_img()
+
         pl.draw()
         self.canvas.draw()

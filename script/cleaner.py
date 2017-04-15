@@ -126,7 +126,7 @@ class Cleaner(object):
 
   def quit(self):
 
-    self.parent.myCLEAN = None
+    self.parent.my_cleaner = None
     self.parent._setNoise(0.0)
     self.parent._setGains(-1, -1, 0, 0, 1.0)
     self.me.destroy()
