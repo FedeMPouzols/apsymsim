@@ -309,7 +309,9 @@ class Interferometer(object):
     self.wax['loadmod'] = pl.axes([but_x + 0.07, but_y + 0.26, 0.10, 0.05])
     self.wax['add'] = pl.axes([but_x + 0.28, but_y + 0.38, 0.08, 0.05])
     self.wax['rem'] = pl.axes([but_x + 0.28, but_y + 0.32, 0.08, 0.05])
-    self.wax['reduce'] = pl.axes([but_x + 0.12, but_y + 0.08, 0.16, 0.05])
+
+    self.wax['reduce'] = pl.axes([but_x + 0.07, but_y + 0.20, 0.10, 0.05])
+    self.wax['clean'] = pl.axes([but_x + 0.12, but_y + 0.08, 0.16, 0.05])
     have_quit = False
     if have_quit:
         self.wax['quit'] = pl.axes([but_x + 0.155, but_y + 0.02, 0.08, 0.05])
@@ -347,10 +349,11 @@ class Interferometer(object):
     # create widgets for buttons
     self.widget['add'] = Button(self.wax['add'], r'+ Antenna')
     self.widget['rem'] = Button(self.wax['rem'], r'- Antenna')
-    self.widget['reduce'] = Button(self.wax['reduce'], r'Reduce data')
-    reduce_label = self.widget['reduce'].label
-    reduce_label.set_fontsize(14)
-    reduce_label.set_weight('bold')
+    self.widget['reduce'] = Button(self.wax['reduce'], r'Adv. reduction')
+    self.widget['clean'] = Button(self.wax['clean'], r'Clean image')
+    clean_label = self.widget['clean'].label
+    clean_label.set_fontsize(14)
+    clean_label.set_weight('bold')
     self.widget['save'] = Button(self.wax['save'], 'Save array')
     self.widget['loadarr'] = Button(self.wax['loadarr'], 'Load array')
     self.widget['loadmod'] = Button(self.wax['loadmod'], 'Load model')
@@ -390,6 +393,7 @@ class Interferometer(object):
     if have_quit:
         self.widget['quit'].on_clicked(self.quit)
     self.widget['reduce'].on_clicked(self._reduce)
+    self.widget['clean'].on_clicked(self._reduce)
 
     # set on_ methods for output bars/labels
     self.widget['subarrwgt'].on_changed(self._subarrwgt)
