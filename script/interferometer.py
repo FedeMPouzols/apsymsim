@@ -401,6 +401,8 @@ class Interferometer(object):
 
         self.widget['subarrwgt'] = Slider(self.wax['subarrwgt'], 'log(W1/W2)',
                                           -4, 4, valinit=0, color='red')
+        self.widget['subarrwgt'].label.set_fontsize(9)
+        self.widget['subarrwgt'].valtext.set_fontsize(9)
 
         # set on_ methods for bars
         self.widget['lat'].on_changed(self._onKeyLat)
