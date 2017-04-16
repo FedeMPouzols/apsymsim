@@ -2,7 +2,12 @@
 
 # SPEC FILE FOR PYINSTALLER:
 
-a = Analysis(['z:\\apsynsim\\script\\apsynsim.py'],
+a = Analysis(['z:\\apsynsim\\script\\apsynsim.py',
+              'z:\\apsynsim\\script\\cleaner.py',
+              'z:\\apsynsim\\script\\interferometer.py',
+              'z:\\apsynsim\\script\\simple_clean_img.py',
+              'z:\\apsynsim\\script\\uvplotter1.py',
+              'z:\\apsynsim\\script\\uvplotter2.py'],
              pathex=['Z:\\apsinsym_win32'],
              hiddenimports=['scipy.special._ufuncs_cxx','mpl_toolkits','mpl_toolkits.mplot3d'],
              hookspath=None,
