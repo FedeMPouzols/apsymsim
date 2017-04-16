@@ -28,6 +28,7 @@ import scipy.optimize as spfit
 
 from tkMessageBox import showinfo
 
+
 class SimpleCleanImg(object):
     """ Simplified clean image. Does the clean-image calculations and shows
     results onto one of the subaxes of the 'parent'. Assumes too much about
@@ -75,12 +76,17 @@ class SimpleCleanImg(object):
 
         self.dorestore = True
 
-        self.fmtD2 = r'% .2e Jy/beam at point' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f ' "\n" r'Peak: % 4.2f Jy/beam ; rms: % 4.2f Jy/beam'
-        self.fmtDC = r'Model: % .2e Jy/beam at point' "\n" r'$\Delta\alpha = $ % 4.2f / $\Delta\delta = $ % 4.2f ' "\n" r'Peak: % 4.2f Jy/beam ; Dyn. Range: % 4.2f'
+        self.fmtD2 = (r'% .2e Jy/beam at point' "\n"
+                      r'$\Delta\alpha = $ % 4.2f / '
+                      '$\Delta\delta = $ % 4.2f ' "\n"
+                      r'Peak: % 4.2f Jy/beam ; rms: % 4.2f Jy/beam')
+        self.fmtDC = (r'Model: % .2e Jy/beam at point' "\n"
+                      r'$\Delta\alpha = $ % 4.2f / '
+                      '$\Delta\delta = $ % 4.2f ' "\n"
+                      r'Peak: % 4.2f Jy/beam ; Dyn. Range: % 4.2f')
 
         dslice = self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,
                                       self.Np4:self.parent.Npix-self.Np4]
-        modflux = self.parent.dirtymap[self.parent.Nphf, self.parent.Nphf]
         self.RMS = np.sqrt(np.var(dslice) + np.average(dslice)**2.)
         self.PEAK = np.max(dslice)
         self.CLEANPEAK = 0.0
@@ -92,19 +98,18 @@ class SimpleCleanImg(object):
         self.cleanmodd = np.zeros(np.shape(self.parent.dirtymap))
 
         self.parent.cleanPlot.cla()
-        self.CLEANPlotPlot = self.parent.cleanPlot.imshow(self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,
-                                                                        self.Np4:self.parent.Npix-self.Np4],
-                                                   interpolation='nearest',
-                                                   picker=True,
-                                                   cmap=self.parent.currcmap)
+        self.CLEANPlotPlot = self.parent.cleanPlot.imshow(
+            self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,
+                                 self.Np4:self.parent.Npix-self.Np4],
+            interpolation='nearest',
+            picker=True,
+            cmap=self.parent.currcmap)
 
-        self.CLEANText = self.parent.cleanPlot.text(0.05, 0.78,
-                                                    self.fmtDC % (0.0, 0.0, 0.0, 0., 0.),
-                                                    transform=self.parent.cleanPlot.transAxes,
-                                                    bbox=dict(facecolor='white',
-                                                              alpha=0.7),
-                                                    fontsize=10,
-                                                    verticalalignment='bottom')
+        self.CLEANText = self.parent.cleanPlot.text(
+            0.05, 0.78, self.fmtDC % (0.0, 0.0, 0.0, 0., 0.),
+            transform=self.parent.cleanPlot.transAxes,
+            bbox=dict(facecolor='white', alpha=0.7),
+            fontsize=10, verticalalignment='bottom')
 
         pl.setp(self.CLEANPlotPlot, extent=(self.parent.Xaxmax/2.,
                                             -self.parent.Xaxmax/2.,
@@ -113,16 +118,17 @@ class SimpleCleanImg(object):
         self.parent.cleanPlot.set_ylabel('Dec offset (as)')
         self.parent.cleanPlot.set_xlabel('RA offset (as)')
         # more dynamic than self.parent.cleanPlot.set_title('CLEAN (0 ITER)')
-        self.CLEANTitle = self.parent.cleanPlot.text(0.5, 1.02,
-                                                    'CLEAN ( 0 ITER)',
-                                                     transform=self.parent.cleanPlot.transAxes,
-                                                     backgroundcolor=self.parent.figUV.get_facecolor(),
-                                                     verticalalignment='bottom',
-                                                     horizontalalignment='center',
-                                                     fontsize=14)
+        self.CLEANTitle = self.parent.cleanPlot.text(
+            0.5, 1.02, 'CLEAN ( 0 ITER)',
+            transform=self.parent.cleanPlot.transAxes,
+            backgroundcolor=self.parent.figUV.get_facecolor(),
+            verticalalignment='bottom',
+            horizontalalignment='center',
+            fontsize=14)
 
-        self.CLEANPlotPlot.set_array(self.cleanmod[self.Np4:self.parent.Npix-self.Np4,
-                                                   self.Np4:self.parent.Npix-self.Np4])
+        self.CLEANPlotPlot.set_array(
+            self.cleanmod[self.Np4:self.parent.Npix-self.Np4,
+                          self.Np4:self.parent.Npix-self.Np4])
 
         self.parent.cleanPlot.set_xlim((self.parent.curzoom[1][0],
                                         self.parent.curzoom[1][1]))
@@ -137,7 +143,8 @@ class SimpleCleanImg(object):
 
         if len(MainLobe[0]) < 5:
             showinfo('ERROR!',
-                     'The main lobe of the PSF is too narrow!\n CLEAN model will not be restored')
+                     'The main lobe of the PSF is too narrow!\n'
+                     'CLEAN model will not be restored')
             self.cleanBeam[:] = 0.0
             self.cleanBeam[self.parent.Npix/2, self.parent.Npix/2] = 1.0
         else:
@@ -146,14 +153,18 @@ class SimpleCleanImg(object):
 
             try:
                 fit = spfit.leastsq(lambda x:
-                                    np.exp(-(dX*dX*x[0]+dY*dY*x[1]+dX*dY*x[2]))-self.parent.beam[MainLobe],
+                                    np.exp(-(dX*dX*x[0] +
+                                             dY*dY*x[1]+dX*dY*x[2])) -
+                                    self.parent.beam[MainLobe],
                                     [1., 1., 0.])
                 Pang = 180./np.pi*(np.arctan2(fit[0][2],
                                               (fit[0][0]-fit[0][1]))/2.)
                 AmB = fit[0][2]/np.sin(2.*np.pi/180.*Pang)
                 ApB = fit[0][0]+fit[0][1]
-                A = 2.355*(2./(ApB + AmB))**0.5*self.parent.imsize/self.parent.Npix
-                B = 2.355*(2./(ApB - AmB))**0.5*self.parent.imsize/self.parent.Npix
+                A = (2.355 * (2./(ApB + AmB))**0.5 *
+                     self.parent.imsize/self.parent.Npix)
+                B = (2.355 * (2./(ApB - AmB))**0.5 *
+                     self.parent.imsize/self.parent.Npix)
                 if A < B:
                     A, B = B, A
                     Pang = Pang - 90.
@@ -163,20 +174,22 @@ class SimpleCleanImg(object):
                     Pang -= 180.
 
                 if B > 0.1:
-                    self.Beamtxt = '%.1f x %.1f as (PA = %.1f deg.)' % (A, B, Pang)
+                    self.Beamtxt = ('%.1f x %.1f as (PA = %.1f deg.)'
+                                    % (A, B, Pang))
                 else:
-                    self.Beamtxt = '%.1f x %.1f mas (PA = %.1f deg.)' % (1000.*A,
-                                                                         1000.*B,
-                                                                         Pang)
+                    self.Beamtxt = ('%.1f x %.1f mas (PA = %.1f deg.)' %
+                                    (1000.*A, 1000.*B, Pang))
 
                 self.CLEANText.set_text(self.fmtDC % (0., 0., 0., 0., 0.) +
                                         '\n' + self.Beamtxt)
                 # print('BEAM FIT: ',fit[0], A, B, Pang)
                 ddX = np.outer(np.ones(self.parent.Npix),
                                np.arange(-self.parent.Npix/2,
-                                         self.parent.Npix/2).astype(np.float64))
+                                         self.parent.Npix/2).
+                               astype(np.float64))
                 ddY = np.outer(np.arange(-self.parent.Npix/2,
-                                         self.parent.Npix/2).astype(np.float64),
+                                         self.parent.Npix/2).
+                               astype(np.float64),
                                np.ones(self.parent.Npix))
 
                 self.cleanBeam[:] = np.exp(-(ddY*ddY*fit[0][0] +
@@ -188,7 +201,8 @@ class SimpleCleanImg(object):
             except Exception as exc:
                 showinfo('ERROR!',
                          'Problems fitting the PSF main lobe!\n'
-                         'CLEAN model will not be restored. Details: {}'.format(exc))
+                         'CLEAN model will not be restored. Details: {}'.
+                         format(exc))
                 self.cleanBeam[:] = 0.0
                 self.cleanBeam[self.parent.Npix/2, self.parent.Npix/2] = 1.0
 
@@ -224,7 +238,8 @@ class SimpleCleanImg(object):
             thrs = float(self.entries['Thres'])
         except:
             showinfo('ERROR!',
-                     'Please, check the content of Gain, # Iter, and Thres!\nShould be numbers!')
+                     'Please, check the content of Gain, '
+                     '# Iter, and Thres!\nShould be numbers!')
             return
 
         self.parent.figUV.canvas.draw()
@@ -246,27 +261,22 @@ class SimpleCleanImg(object):
             peakpos = np.unravel_index(np.argmax(tempres),
                                        np.shape(self.residuals))
             peakval = self.residuals[peakpos[0], peakpos[1]]
-            self.residuals -= gain*peakval*np.roll(np.roll(psf,
-                                                           peakpos[0]-self.parent.Npix/2,
-                                                           axis=0),
-                                                   peakpos[1]-self.parent.Npix/2,
-                                                   axis=1)
+            self.residuals -= gain*peakval*np.roll(
+                np.roll(psf, peakpos[0]-self.parent.Npix/2, axis=0),
+                peakpos[1]-self.parent.Npix/2, axis=1)
             tempres[goods] = self.residuals[goods]
             # MODIFY CLEAN MODEL!!
             self.cleanmodd[peakpos[0], peakpos[1]] += gain*peakval
-            self.cleanmod += gain*peakval*np.roll(np.roll(self.cleanBeam,
-                                                          peakpos[0]-self.parent.Npix/2,
-                                                          axis=0),
-                                                  peakpos[1]-self.parent.Npix/2,
-                                                  axis=1)
-            # self.ResidPlotPlot.set_array(rslice)
-
+            self.cleanmod += gain*peakval*np.roll(
+                np.roll(self.cleanBeam, peakpos[0]-self.parent.Npix/2,
+                        axis=0),
+                peakpos[1]-self.parent.Npix/2, axis=1)
             self.CLEANPEAK = np.max(self.cleanmod)
             self.totalClean += gain*peakval
-            # self.parent.cleanPlot.set_title('CLEAN (%i ITER): %.2e Jy' % (self.totiter,
-            #                                                               self.totalClean))
-            self.CLEANTitle.set_text('CLEAN (%i ITER): %.2e Jy' % (self.totiter,
-                                                                   self.totalClean))
+            # self.parent.cleanPlot.set_title('CLEAN (%i ITER): %.2e Jy' %
+            #                        (self.totiter, self.totalClean))
+            self.CLEANTitle.set_text('CLEAN (%i ITER): %.2e Jy' %
+                                     (self.totiter, self.totalClean))
 
             xi, yi, RA, Dec = self.pickcoords
 
@@ -293,14 +303,16 @@ class SimpleCleanImg(object):
             self.RMS = np.sqrt(np.var(rslice)+np.average(rslice)**2.)
             self.PEAK = np.max(rslice)
 
-            self.CLEANText.set_text(self.fmtDC % (clFlux, RA, Dec, self.CLEANPEAK,
-                                                  self.CLEANPEAK/self.RMS)+'\n'+self.Beamtxt)
+            self.CLEANText.set_text(self.fmtDC %
+                                    (clFlux, RA, Dec, self.CLEANPEAK,
+                                     self.CLEANPEAK/self.RMS) +
+                                    '\n'+self.Beamtxt)
 
             # This is to avoid a full pl.draw() which is much slower as
             # it refreshes the whole pictures, all panels
             # Consider using matplotlib.animations in the future
-            self.CLEANTitle.set_text('CLEAN (%i ITER): %.2e Jy' % (self.totiter,
-                                                                   self.totalClean))
+            self.CLEANTitle.set_text('CLEAN (%i ITER): %.2e Jy' %
+                                     (self.totiter, self.totalClean))
 
             self.parent.cleanPlot.draw_artist(self.CLEANPlotPlot)
             self.parent.cleanPlot.draw_artist(self.CLEANText)
@@ -308,7 +320,9 @@ class SimpleCleanImg(object):
             # blit does not update axes, titles, legends, etc.
             # Also, blit with cleanPlot.bbox would leave out the title
             # self.parent.figUV.canvas.blit(self.parent.cleanPlot.bbox)
-            bbox_title = mpl.transforms.TransformedBbox(mpl.transforms.Bbox.from_extents([0, 0, 1, 1.1]), self.parent.cleanPlot.transAxes)
+            bbox_title = mpl.transforms.TransformedBbox(
+                mpl.transforms.Bbox.from_extents([0, 0, 1, 1.1]),
+                self.parent.cleanPlot.transAxes)
             self.parent.figUV.canvas.blit(bbox_title)
 
         # Re-draw all if threshold reached:
