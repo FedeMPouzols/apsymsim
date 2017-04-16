@@ -1,4 +1,4 @@
-#############################################################################
+#
 #
 #    This file is part of APSYNSIM: A real-time Aperture Synthesis Simulator
 #
@@ -17,7 +17,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-#############################################################################
+#
 
 from __future__ import (absolute_import, print_function)
 
@@ -30,6 +30,7 @@ from tkMessageBox import showinfo
 
 
 class SimpleCleanImg(object):
+
     """ Simplified clean image. Does the clean-image calculations and shows
     results onto one of the subaxes of the 'parent'. Assumes too much about
     the 'parent'. Requires among other things parent.cleanPlot."""
@@ -41,7 +42,7 @@ class SimpleCleanImg(object):
         self.cleanmod = None
         self.cleanmodd = None
         self.cleanBeam = None
-        self.BeamTxt = ''
+        self.Beamtxt = ''
         self._recalib()
 
     def __del__(self):
@@ -72,7 +73,7 @@ class SimpleCleanImg(object):
 
     def _reset(self, donoise=False):
 
-        self.Np4 = self.parent.Npix/4
+        self.Np4 = self.parent.Npix / 4
 
         self.dorestore = True
 
@@ -85,8 +86,8 @@ class SimpleCleanImg(object):
                       '$\Delta\delta = $ % 4.2f ' "\n"
                       r'Peak: % 4.2f Jy/beam ; Dyn. Range: % 4.2f')
 
-        dslice = self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,
-                                      self.Np4:self.parent.Npix-self.Np4]
+        dslice = self.parent.dirtymap[self.Np4:self.parent.Npix - self.Np4,
+                                      self.Np4:self.parent.Npix - self.Np4]
         self.RMS = np.sqrt(np.var(dslice) + np.average(dslice)**2.)
         self.PEAK = np.max(dslice)
         self.CLEANPEAK = 0.0
@@ -99,8 +100,8 @@ class SimpleCleanImg(object):
 
         self.parent.cleanPlot.cla()
         self.CLEANPlotPlot = self.parent.cleanPlot.imshow(
-            self.parent.dirtymap[self.Np4:self.parent.Npix-self.Np4,
-                                 self.Np4:self.parent.Npix-self.Np4],
+            self.parent.dirtymap[self.Np4:self.parent.Npix - self.Np4,
+                                 self.Np4:self.parent.Npix - self.Np4],
             interpolation='nearest',
             picker=True,
             cmap=self.parent.currcmap)
@@ -111,10 +112,10 @@ class SimpleCleanImg(object):
             bbox=dict(facecolor='white', alpha=0.7),
             fontsize=10, verticalalignment='bottom')
 
-        pl.setp(self.CLEANPlotPlot, extent=(self.parent.Xaxmax/2.,
-                                            -self.parent.Xaxmax/2.,
-                                            -self.parent.Xaxmax/2.,
-                                            self.parent.Xaxmax/2.))
+        pl.setp(self.CLEANPlotPlot, extent=(self.parent.Xaxmax / 2.,
+                                            -self.parent.Xaxmax / 2.,
+                                            -self.parent.Xaxmax / 2.,
+                                            self.parent.Xaxmax / 2.))
         self.parent.cleanPlot.set_ylabel('Dec offset (as)')
         self.parent.cleanPlot.set_xlabel('RA offset (as)')
         # more dynamic than self.parent.cleanPlot.set_title('CLEAN (0 ITER)')
@@ -127,8 +128,8 @@ class SimpleCleanImg(object):
             fontsize=14)
 
         self.CLEANPlotPlot.set_array(
-            self.cleanmod[self.Np4:self.parent.Npix-self.Np4,
-                          self.Np4:self.parent.Npix-self.Np4])
+            self.cleanmod[self.Np4:self.parent.Npix - self.Np4,
+                          self.Np4:self.parent.Npix - self.Np4])
 
         self.parent.cleanPlot.set_xlim((self.parent.curzoom[1][0],
                                         self.parent.curzoom[1][1]))
@@ -146,25 +147,25 @@ class SimpleCleanImg(object):
                      'The main lobe of the PSF is too narrow!\n'
                      'CLEAN model will not be restored')
             self.cleanBeam[:] = 0.0
-            self.cleanBeam[self.parent.Npix/2, self.parent.Npix/2] = 1.0
+            self.cleanBeam[self.parent.Npix / 2, self.parent.Npix / 2] = 1.0
         else:
-            dX = MainLobe[0]-self.parent.Npix/2
-            dY = MainLobe[1]-self.parent.Npix/2
+            dX = MainLobe[0] - self.parent.Npix / 2
+            dY = MainLobe[1] - self.parent.Npix / 2
 
             try:
                 fit = spfit.leastsq(lambda x:
-                                    np.exp(-(dX*dX*x[0] +
-                                             dY*dY*x[1]+dX*dY*x[2])) -
+                                    np.exp(-(dX * dX * x[0] +
+                                             dY * dY * x[1] + dX * dY * x[2])) -
                                     self.parent.beam[MainLobe],
                                     [1., 1., 0.])
-                Pang = 180./np.pi*(np.arctan2(fit[0][2],
-                                              (fit[0][0]-fit[0][1]))/2.)
-                AmB = fit[0][2]/np.sin(2.*np.pi/180.*Pang)
-                ApB = fit[0][0]+fit[0][1]
-                A = (2.355 * (2./(ApB + AmB))**0.5 *
-                     self.parent.imsize/self.parent.Npix)
-                B = (2.355 * (2./(ApB - AmB))**0.5 *
-                     self.parent.imsize/self.parent.Npix)
+                Pang = 180. / np.pi * (np.arctan2(fit[0][2],
+                                                  (fit[0][0] - fit[0][1])) / 2.)
+                AmB = fit[0][2] / np.sin(2. * np.pi / 180. * Pang)
+                ApB = fit[0][0] + fit[0][1]
+                A = (2.355 * (2. / (ApB + AmB))**0.5 *
+                     self.parent.imsize / self.parent.Npix)
+                B = (2.355 * (2. / (ApB - AmB))**0.5 *
+                     self.parent.imsize / self.parent.Npix)
                 if A < B:
                     A, B = B, A
                     Pang = Pang - 90.
@@ -178,23 +179,23 @@ class SimpleCleanImg(object):
                                     % (A, B, Pang))
                 else:
                     self.Beamtxt = ('%.1f x %.1f mas (PA = %.1f deg.)' %
-                                    (1000.*A, 1000.*B, Pang))
+                                    (1000. * A, 1000. * B, Pang))
 
                 self.CLEANText.set_text(self.fmtDC % (0., 0., 0., 0., 0.) +
                                         '\n' + self.Beamtxt)
                 # print('BEAM FIT: ',fit[0], A, B, Pang)
                 ddX = np.outer(np.ones(self.parent.Npix),
-                               np.arange(-self.parent.Npix/2,
-                                         self.parent.Npix/2).
+                               np.arange(-self.parent.Npix / 2,
+                                         self.parent.Npix / 2).
                                astype(np.float64))
-                ddY = np.outer(np.arange(-self.parent.Npix/2,
-                                         self.parent.Npix/2).
+                ddY = np.outer(np.arange(-self.parent.Npix / 2,
+                                         self.parent.Npix / 2).
                                astype(np.float64),
                                np.ones(self.parent.Npix))
 
-                self.cleanBeam[:] = np.exp(-(ddY*ddY*fit[0][0] +
-                                             ddX*ddX*fit[0][1] +
-                                             ddY*ddX*fit[0][2]))
+                self.cleanBeam[:] = np.exp(-(ddY * ddY * fit[0][0] +
+                                             ddX * ddX * fit[0][1] +
+                                             ddY * ddX * fit[0][2]))
 
                 del ddX, ddY
 
@@ -204,7 +205,8 @@ class SimpleCleanImg(object):
                          'CLEAN model will not be restored. Details: {}'.
                          format(exc))
                 self.cleanBeam[:] = 0.0
-                self.cleanBeam[self.parent.Npix/2, self.parent.Npix/2] = 1.0
+                self.cleanBeam[
+                    self.parent.Npix / 2, self.parent.Npix / 2] = 1.0
 
         self.resadd = False
         self.dorestore = True
@@ -225,7 +227,7 @@ class SimpleCleanImg(object):
             tempres = self.residuals
         else:
             goods = self.bmask
-            tempres = self.residuals*self.mask
+            tempres = self.residuals * self.mask
 
         psf = self.parent.beam
 
@@ -256,23 +258,23 @@ class SimpleCleanImg(object):
                     showinfo('INFO', 'Threshold reached in CLEAN masks!')
                     break
 
-            rslice = self.residuals[self.Np4:self.parent.Npix-self.Np4,
-                                    self.Np4:self.parent.Npix-self.Np4]
+            rslice = self.residuals[self.Np4:self.parent.Npix - self.Np4,
+                                    self.Np4:self.parent.Npix - self.Np4]
             peakpos = np.unravel_index(np.argmax(tempres),
                                        np.shape(self.residuals))
             peakval = self.residuals[peakpos[0], peakpos[1]]
-            self.residuals -= gain*peakval*np.roll(
-                np.roll(psf, peakpos[0]-self.parent.Npix/2, axis=0),
-                peakpos[1]-self.parent.Npix/2, axis=1)
+            self.residuals -= gain * peakval * np.roll(
+                np.roll(psf, peakpos[0] - self.parent.Npix / 2, axis=0),
+                peakpos[1] - self.parent.Npix / 2, axis=1)
             tempres[goods] = self.residuals[goods]
             # MODIFY CLEAN MODEL!!
-            self.cleanmodd[peakpos[0], peakpos[1]] += gain*peakval
-            self.cleanmod += gain*peakval*np.roll(
-                np.roll(self.cleanBeam, peakpos[0]-self.parent.Npix/2,
+            self.cleanmodd[peakpos[0], peakpos[1]] += gain * peakval
+            self.cleanmod += gain * peakval * np.roll(
+                np.roll(self.cleanBeam, peakpos[0] - self.parent.Npix / 2,
                         axis=0),
-                peakpos[1]-self.parent.Npix/2, axis=1)
+                peakpos[1] - self.parent.Npix / 2, axis=1)
             self.CLEANPEAK = np.max(self.cleanmod)
-            self.totalClean += gain*peakval
+            self.totalClean += gain * peakval
             # self.parent.cleanPlot.set_title('CLEAN (%i ITER): %.2e Jy' %
             #                        (self.totiter, self.totalClean))
             self.CLEANTitle.set_text('CLEAN (%i ITER): %.2e Jy' %
@@ -291,22 +293,22 @@ class SimpleCleanImg(object):
             clFlux = toadd[xi, yi]
 
             self.CLEANPlotPlot.set_array(
-                toadd[self.Np4:self.parent.Npix-self.Np4,
-                      self.Np4:self.parent.Npix-self.Np4])
+                toadd[self.Np4:self.parent.Npix - self.Np4,
+                      self.Np4:self.parent.Npix - self.Np4])
             self.CLEANPlotPlot.norm.vmin = np.min(
-                toadd[self.Np4:self.parent.Npix-self.Np4,
-                      self.Np4:self.parent.Npix-self.Np4])
+                toadd[self.Np4:self.parent.Npix - self.Np4,
+                      self.Np4:self.parent.Npix - self.Np4])
             self.CLEANPlotPlot.norm.vmax = np.max(
-                toadd[self.Np4:self.parent.Npix-self.Np4,
-                      self.Np4:self.parent.Npix-self.Np4])
+                toadd[self.Np4:self.parent.Npix - self.Np4,
+                      self.Np4:self.parent.Npix - self.Np4])
 
-            self.RMS = np.sqrt(np.var(rslice)+np.average(rslice)**2.)
+            self.RMS = np.sqrt(np.var(rslice) + np.average(rslice)**2.)
             self.PEAK = np.max(rslice)
 
             self.CLEANText.set_text(self.fmtDC %
                                     (clFlux, RA, Dec, self.CLEANPEAK,
-                                     self.CLEANPEAK/self.RMS) +
-                                    '\n'+self.Beamtxt)
+                                     self.CLEANPEAK / self.RMS) +
+                                    '\n' + self.Beamtxt)
 
             # This is to avoid a full pl.draw() which is much slower as
             # it refreshes the whole pictures, all panels
