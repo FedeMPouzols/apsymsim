@@ -4,7 +4,9 @@
 
 # RUN PYINSTALLER WITH THE -w FLAG!!
 
-a = Analysis(['./script/apsynsim.py'],
+a = Analysis(['./script/apsynsim.py', './script/cleaner.py',
+              './script/interferometer.py', './script/simple_clean_img.py',
+              './script/uvplotter1.py', './script/uvplotter2.py'],
              pathex=['./apsinsym_mac'],
              hiddenimports=['scipy.special._ufuncs_cxx','mpl_toolkits','mpl_toolkits.mplot3d'],
              hookspath=None,
