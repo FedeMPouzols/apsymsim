@@ -35,6 +35,8 @@ class SimpleCleanImg(object):
     results onto one of the subaxes of the 'parent'. Assumes too much about
     the 'parent'. Requires among other things parent.cleanPlot."""
 
+    DEFAULT_NITER = 400
+
     def __init__(self, parent, plot_axis):
         self.parent = parent
         self.plot_axis = plot_axis
@@ -58,7 +60,7 @@ class SimpleCleanImg(object):
     def _recalib(self):
         self.entries = {}
         self.entries['Gain'] = 0.1
-        self.entries['Niter'] = 100
+        self.entries['Niter'] = self.DEFAULT_NITER
         self.entries['Thres'] = 0.0
 
         self.entries['Ant1'] = 0
@@ -70,6 +72,21 @@ class SimpleCleanImg(object):
 
         self.parent._setGains(-1, -1, 0, 0, 1.0)
         self._reset()
+
+    def _init_values(self):
+        self.totiter = 0
+
+        dslice = self.parent.dirtymap[self.Np4:self.parent.Npix - self.Np4,
+                                      self.Np4:self.parent.Npix - self.Np4]
+        self.RMS = np.sqrt(np.var(dslice) + np.average(dslice)**2.)
+        self.PEAK = np.max(dslice)
+        self.CLEANPEAK = 0.0
+        self.pickcoords = [self.parent.Nphf, self.parent.Nphf, 0., 0.]
+
+        self.Xaxmax = float(self.parent.Xaxmax)
+        self.residuals = np.copy(self.parent.dirtymap)
+        self.cleanmod = np.zeros(np.shape(self.parent.dirtymap))
+        self.cleanmodd = np.zeros(np.shape(self.parent.dirtymap))
 
     def _reset(self, donoise=False):
 
@@ -86,17 +103,7 @@ class SimpleCleanImg(object):
                       '$\Delta\delta = $ % 4.2f ' "\n"
                       r'Peak: % 4.2f Jy/beam ; Dyn. Range: % 4.2f')
 
-        dslice = self.parent.dirtymap[self.Np4:self.parent.Npix - self.Np4,
-                                      self.Np4:self.parent.Npix - self.Np4]
-        self.RMS = np.sqrt(np.var(dslice) + np.average(dslice)**2.)
-        self.PEAK = np.max(dslice)
-        self.CLEANPEAK = 0.0
-        self.pickcoords = [self.parent.Nphf, self.parent.Nphf, 0., 0.]
-
-        self.Xaxmax = float(self.parent.Xaxmax)
-        self.residuals = np.copy(self.parent.dirtymap)
-        self.cleanmod = np.zeros(np.shape(self.parent.dirtymap))
-        self.cleanmodd = np.zeros(np.shape(self.parent.dirtymap))
+        self._init_values()
 
         self.parent.cleanPlot.cla()
         self.CLEANPlotPlot = self.parent.cleanPlot.imshow(
@@ -135,8 +142,6 @@ class SimpleCleanImg(object):
                                         self.parent.curzoom[1][1]))
         self.parent.cleanPlot.set_ylim((self.parent.curzoom[1][2],
                                         self.parent.curzoom[1][3]))
-
-        self.totiter = 0
 
         # DERIVE THE CLEAN BEAM
         MainLobe = np.where(self.parent.beam > 0.6)
