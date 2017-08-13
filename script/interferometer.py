@@ -30,6 +30,7 @@ import sys
 import time
 
 import matplotlib as mpl
+mpl.use('TkAgg')
 from matplotlib.widgets import Slider, Button
 import matplotlib.cm as cm
 import matplotlib.image as plimg
@@ -45,8 +46,6 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import tkFileDialog
 from tkMessageBox import showinfo
-
-mpl.use('TkAgg')
 
 import simple_clean_img
 import cleaner
@@ -324,14 +323,14 @@ class Interferometer(object):
         # 3 x rows: +0.07, 0.155, 0.24
         but_x = 0
         but_y = 0.5
-        self.wax['loadarr'] = pl.axes([but_x + 0.07, but_y + 0.38, 0.10, 0.05])
-        self.wax['save'] = pl.axes([but_x + 0.07, but_y + 0.32, 0.10, 0.05])
-        self.wax['loadmod'] = pl.axes([but_x + 0.07, but_y + 0.26, 0.10, 0.05])
-        self.wax['add'] = pl.axes([but_x + 0.28, but_y + 0.38, 0.08, 0.05])
-        self.wax['rem'] = pl.axes([but_x + 0.28, but_y + 0.32, 0.08, 0.05])
+        self.wax['loadarr'] = pl.axes([but_x + 0.07, but_y + 0.38, 0.10, 0.05], zorder=100)
+        self.wax['save'] = pl.axes([but_x + 0.07, but_y + 0.32, 0.10, 0.05], zorder=100)
+        self.wax['loadmod'] = pl.axes([but_x + 0.07, but_y + 0.26, 0.10, 0.05], zorder=100)
+        self.wax['add'] = pl.axes([but_x + 0.28, but_y + 0.38, 0.08, 0.05], zorder=100)
+        self.wax['rem'] = pl.axes([but_x + 0.28, but_y + 0.32, 0.08, 0.05], zorder=100)
 
-        self.wax['reduce'] = pl.axes([but_x + 0.07, but_y + 0.20, 0.10, 0.05])
-        self.wax['clean'] = pl.axes([but_x + 0.12, but_y + 0.08, 0.16, 0.05])
+        self.wax['reduce'] = pl.axes([but_x + 0.07, but_y + 0.20, 0.10, 0.05], zorder=100)
+        self.wax['clean'] = pl.axes([but_x + 0.12, but_y + 0.08, 0.16, 0.05], zorder=100)
         have_quit = False
         if have_quit:
             self.wax['quit'] = pl.axes(
@@ -428,6 +427,12 @@ class Interferometer(object):
         self.widget['subarrwgt'].on_changed(self._subarrwgt)
         self.widget['diameter'].on_changed(self._setDiameter)
 
+        self.prepare_all_plots()
+        self._init_clean_img()
+
+        self.canvas.draw()
+
+    def prepare_all_plots(self):
         self._prepareBeam()
         self._prepareBaselines()
         self._setBaselines()
@@ -438,10 +443,6 @@ class Interferometer(object):
         self._plotModel()
         self._plotDirty()
         self._plotModelFFT()
-
-        self._init_clean_img()
-
-        self.canvas.draw()
 
     def _init_clean_img(self):
         # The cleaner with functionality separated from GUI
@@ -463,12 +464,18 @@ class Interferometer(object):
             self.my_cleaner = cleaner.Cleaner(self)
 
     def _clean_img(self, event):
+        restart_from_0 = True
 
         if self.my_clean_img is not None:
+            if restart_from_0:
+                self.prepare_all_plots()
+                self.my_clean_img._init_values()
+
             self.cleanPlot.set_xlim((self.curzoom[1][0],
                                      self.curzoom[1][1]))
             self.cleanPlot.set_ylim((self.curzoom[1][2],
                                      self.curzoom[1][3]))
+
             self.my_clean_img.do_clean()
 
     def readAntennas(self, antenna_file):
