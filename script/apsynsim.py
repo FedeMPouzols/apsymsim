@@ -35,7 +35,8 @@ __version__ = '2.1-a'
 if __name__ == "__main__":
 
     root = Tk.Tk()
-    TITLE = ('Aperture Synthesis Simulator (I. Marti-Vidal, '
+    TITLE = ('Aperture Synthesis Simulator - ESO Supernova fork '
+             '(based on apsynsim by I. Marti-Vidal, '
              'Onsala Space Observatory) - version  %s' % __version__)
     root.wm_title(TITLE)
 

@@ -449,10 +449,10 @@ class Cleaner(object):
     def _onPick(self, event):
         RA = event.mouseevent.xdata
         Dec = event.mouseevent.ydata
-        yi = np.floor((self.Xaxmax - RA) / (
-            2. * self.Xaxmax) * self.parent.Npix)
-        xi = np.floor((self.Xaxmax - Dec) / (
-            2. * self.Xaxmax) * self.parent.Npix)
+        yi = int(np.floor((self.Xaxmax - RA) / (
+            2. * self.Xaxmax) * self.parent.Npix))
+        xi = int(np.floor((self.Xaxmax - Dec) / (
+            2. * self.Xaxmax) * self.parent.Npix))
         Flux = self.residuals[xi, yi]
         self.pickcoords = [xi, yi, RA, Dec]
         self.ResidText.set_text(self.fmtD2 % (Flux, RA, Dec,
@@ -978,10 +978,10 @@ class Cleaner(object):
     def _onCSPick(self, event):
         RA = event.mouseevent.xdata
         Dec = event.mouseevent.ydata
-        yi = np.floor((self.Xaxmax - RA) / (
-            2. * self.Xaxmax) * self.parent.Npix)
-        xi = np.floor((self.Xaxmax - Dec) / (
-            2. * self.Xaxmax) * self.parent.Npix)
+        yi = int(np.floor((self.Xaxmax - RA) / (
+            2. * self.Xaxmax) * self.parent.Npix))
+        xi = int(np.floor((self.Xaxmax - Dec) / (
+            2. * self.Xaxmax) * self.parent.Npix))
         Flux = self.CSImage[xi, yi]
         self.CSText.set_text(self.parent.fmtD % (Flux, RA, Dec))
 

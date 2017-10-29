@@ -30,6 +30,7 @@ import sys
 import time
 
 import matplotlib as mpl
+mpl.use('TkAgg')
 from matplotlib.widgets import Slider, Button
 import matplotlib.cm as cm
 import matplotlib.image as plimg
@@ -45,8 +46,6 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import tkFileDialog
 from tkMessageBox import showinfo
-
-mpl.use('TkAgg')
 
 import simple_clean_img
 import cleaner
@@ -137,17 +136,17 @@ class Interferometer(object):
 
         self.my_cleaner = None   # Cleaner window instance (when initialized)
 
-# Default of defaults!
+        # Default of defaults!
         nH = 200
         Npix = 512   # Image pixel size. Must be a power of 2
         DefaultModel = 'Nebula.model'
         DefaultArray = 'Long_Golay_12.array'
 
-# Overwrite defaults from config file:
+        # Overwrite defaults from config file:
         d1 = os.path.dirname(os.path.realpath(__file__))
         print(d1)
 
-#   execfile(os.path.join(os.path.basename(d1),'apsynsim.config'))
+        # execfile(os.path.join(os.path.basename(d1),'apsynsim.config'))
         try:
             conf = open(os.path.join(d1, 'apsynsim.config'))
         except:
@@ -229,6 +228,8 @@ class Interferometer(object):
             self.canvas.show()
             menubar = Tk.Menu(self.tks)
             menubar.add_command(label="Help", command=self._getHelp)
+            menubar.add_command(label="Advanced reduction",
+                                command=self._reduce_menu_action)
             menubar.add_command(label="Quit", command=self.quit)
 
             self.tks.config(menu=menubar)
@@ -319,19 +320,24 @@ class Interferometer(object):
         self.wax['robust'] = pl.axes(
             [bars_x + 0.07, bars_y + 0.20, 0.25, 0.04])
 
-        # Place buttons
+        # Place axes for button widgets
         # offsets wrt (original) bottom left panel
         # 3 x rows: +0.07, 0.155, 0.24
         but_x = 0
         but_y = 0.5
-        self.wax['loadarr'] = pl.axes([but_x + 0.07, but_y + 0.38, 0.10, 0.05])
-        self.wax['save'] = pl.axes([but_x + 0.07, but_y + 0.32, 0.10, 0.05])
-        self.wax['loadmod'] = pl.axes([but_x + 0.07, but_y + 0.26, 0.10, 0.05])
-        self.wax['add'] = pl.axes([but_x + 0.28, but_y + 0.38, 0.08, 0.05])
-        self.wax['rem'] = pl.axes([but_x + 0.28, but_y + 0.32, 0.08, 0.05])
+        self.wax['loadarr'] = pl.axes([but_x + 0.15, but_y + 0.38, 0.10, 0.05], zorder=100)
+        self.wax['save'] = pl.axes([but_x + 0.15, but_y + 0.32, 0.10, 0.05], zorder=100)
+        self.wax['loadmod'] = pl.axes([but_x + 0.15, but_y + 0.26, 0.10, 0.05], zorder=100)
+        self.wax['add'] = pl.axes([but_x + 0.38, but_y + 0.44, 0.04, 0.05], zorder=100)
+        self.wax['rem'] = pl.axes([but_x + 0.62, but_y + 0.44, 0.04, 0.05], zorder=100)
 
-        self.wax['reduce'] = pl.axes([but_x + 0.07, but_y + 0.20, 0.10, 0.05])
-        self.wax['clean'] = pl.axes([but_x + 0.12, but_y + 0.08, 0.16, 0.05])
+        self.wax['zoom_in'] = pl.axes([but_x + 0.38, but_y + 0.02, 0.04, 0.05], zorder=100)
+        self.wax['zoom_out'] = pl.axes([but_x + 0.62, but_y + 0.02, 0.04, 0.05], zorder=100)
+
+        show_adv_reduction_button = False
+        if show_adv_reduction_button:
+            self.wax['reduce'] = pl.axes([but_x + 0.15, but_y + 0.20, 0.10, 0.05], zorder=100)
+        self.wax['clean'] = pl.axes([but_x + 0.12, but_y + 0.08, 0.16, 0.05], zorder=100)
         have_quit = False
         if have_quit:
             self.wax['quit'] = pl.axes(
@@ -374,9 +380,12 @@ class Interferometer(object):
                                        -2., 2., valinit=0.0)
 
         # create widgets for buttons
-        self.widget['add'] = Button(self.wax['add'], r'+ Antenna')
-        self.widget['rem'] = Button(self.wax['rem'], r'- Antenna')
-        self.widget['reduce'] = Button(self.wax['reduce'], r'Adv. reduction')
+        self.widget['add'] = Button(self.wax['add'], r'+ A')
+        self.widget['rem'] = Button(self.wax['rem'], r'- A')
+        self.widget['zoom_in'] = Button(self.wax['zoom_in'], r'Z+')
+        self.widget['zoom_out'] = Button(self.wax['zoom_out'], r'Z-')
+        if show_adv_reduction_button:
+            self.widget['reduce'] = Button(self.wax['reduce'], r'Adv. reduction')
         self.widget['clean'] = Button(self.wax['clean'], r'Clean image')
         clean_label = self.widget['clean'].label
         clean_label.set_fontsize(14)
@@ -415,19 +424,28 @@ class Interferometer(object):
         # set on_ methods for buttons
         self.widget['add'].on_clicked(self._addAntenna)
         self.widget['rem'].on_clicked(self._removeAntenna)
+        self.widget['zoom_in'].on_clicked(self._zoom_in_antennas)
+        self.widget['zoom_out'].on_clicked(self._zoom_out_antennas)
         self.widget['save'].on_clicked(self.saveArray)
         self.widget['loadarr'].on_clicked(self.loadArray)
         self.widget['loadmod'].on_clicked(self.loadModel)
         self.widget['gammacorr'].on_changed(self._gammacorr)
         if have_quit:
             self.widget['quit'].on_clicked(self.quit)
-        self.widget['reduce'].on_clicked(self._reduce)
+        if show_adv_reduction_button:
+            self.widget['reduce'].on_clicked(self._reduce)
         self.widget['clean'].on_clicked(self._clean_img)
 
         # set on_ methods for output bars/labels
         self.widget['subarrwgt'].on_changed(self._subarrwgt)
         self.widget['diameter'].on_changed(self._setDiameter)
 
+        self.prepare_all_plots()
+        self._init_clean_img()
+
+        self.canvas.draw()
+
+    def prepare_all_plots(self):
         self._prepareBeam()
         self._prepareBaselines()
         self._setBaselines()
@@ -438,10 +456,6 @@ class Interferometer(object):
         self._plotModel()
         self._plotDirty()
         self._plotModelFFT()
-
-        self._init_clean_img()
-
-        self.canvas.draw()
 
     def _init_clean_img(self):
         # The cleaner with functionality separated from GUI
@@ -457,18 +471,28 @@ class Interferometer(object):
             self._setPrimaryBeam(replotFFT=True)
             self._changeCoordinates(rescale=True)
 
-    def _reduce(self, event):
+    def _reduce_menu_action(self):
 
         if self.tks is not None:
             self.my_cleaner = cleaner.Cleaner(self)
 
+    def _reduce(self, event):
+
+        self._reduce_menu_action()
+
     def _clean_img(self, event):
+        restart_from_0 = True
 
         if self.my_clean_img is not None:
+            if restart_from_0:
+                self.prepare_all_plots()
+                self.my_clean_img._init_values()
+
             self.cleanPlot.set_xlim((self.curzoom[1][0],
                                      self.curzoom[1][1]))
             self.cleanPlot.set_ylim((self.curzoom[1][2],
                                      self.curzoom[1][3]))
+
             self.my_clean_img.do_clean()
 
     def readAntennas(self, antenna_file):
@@ -1264,7 +1288,7 @@ class Interferometer(object):
             self.antPlot.set_xlabel('E-W offset (km)')
             self.antPlot.set_ylabel('N-S offset (km)')
             self.antPlot.set_title('ARRAY CONFIGURATION')
-            self.antText = self.antPlot.text(0.05, 0.88,
+            self.antText = self.antPlot.text(0.05, 0.94,
                                              self.fmtA % (
                                                  self.Nant + self.Nant2),
                                              transform=self.antPlot.transAxes)
@@ -1448,8 +1472,8 @@ class Interferometer(object):
 
             Up = event.mouseevent.xdata - self.UVSh
             Vp = event.mouseevent.ydata + self.UVSh
-            yi = np.floor((self.UVmax + Up) / (self.UVmax) * self.Npix / 2.)
-            xi = np.floor((self.UVmax - Vp) / (self.UVmax) * self.Npix / 2.)
+            yi = int(np.floor((self.UVmax + Up) / (self.UVmax) * self.Npix / 2.))
+            xi = int(np.floor((self.UVmax - Vp) / (self.UVmax) * self.Npix / 2.))
             Flux = self.FFTtoplot[xi, yi]
             Phas, Amp = np.angle(Flux, deg=True), np.abs(Flux)
             newtext = self.fmtVis % (Amp, Phas)
@@ -1498,8 +1522,8 @@ class Interferometer(object):
 
             RA = event.mouseevent.xdata
             Dec = event.mouseevent.ydata
-            yi = np.floor((self.Xaxmax - RA) / (2. * self.Xaxmax) * self.Npix)
-            xi = np.floor((self.Xaxmax - Dec) / (2. * self.Xaxmax) * self.Npix)
+            yi = int(np.floor((self.Xaxmax - RA) / (2. * self.Xaxmax) * self.Npix))
+            xi = int(np.floor((self.Xaxmax - Dec) / (2. * self.Xaxmax) * self.Npix))
             Flux = self.beam[xi, yi]
             self.beamText.set_text(self.fmtB % (Flux, RA, Dec))
             pl.draw()
@@ -1509,8 +1533,8 @@ class Interferometer(object):
 
             RA = event.mouseevent.xdata
             Dec = event.mouseevent.ydata
-            yi = np.floor((self.Xaxmax - RA) / (2. * self.Xaxmax) * self.Npix)
-            xi = np.floor((self.Xaxmax - Dec) / (2. * self.Xaxmax) * self.Npix)
+            yi = int(np.floor((self.Xaxmax - RA) / (2. * self.Xaxmax) * self.Npix))
+            xi = int(np.floor((self.Xaxmax - Dec) / (2. * self.Xaxmax) * self.Npix))
             Flux = self.dirtymap[xi, yi]
             self.dirtyText.set_text(self.fmtD % (Flux, RA, Dec))
             pl.draw()
@@ -1520,8 +1544,8 @@ class Interferometer(object):
 
             RA = event.mouseevent.xdata
             Dec = event.mouseevent.ydata
-            yi = np.floor((self.Xaxmax - RA) / (2. * self.Xaxmax) * self.Npix)
-            xi = np.floor((self.Xaxmax - Dec) / (2. * self.Xaxmax) * self.Npix)
+            yi = int(np.floor((self.Xaxmax - RA) / (2. * self.Xaxmax) * self.Npix))
+            xi = int(np.floor((self.Xaxmax - Dec) / (2. * self.Xaxmax) * self.Npix))
             Flux = self.modelimTrue[xi, yi]
             self.modelText.set_text(self.fmtM % (Flux, RA, Dec))
             pl.draw()
@@ -1539,6 +1563,8 @@ class Interferometer(object):
                 self.antidx = event.ind
                 if len(self.antidx) > 1:
                     self.antidx = self.antidx[-1]
+                else:
+                    self.antidx = int(self.antidx)
                 self.pickAnt = True
                 if self.pickSub == 0:
                     self.antText.set_text(self.fmtA % (self.Nant + self.Nant2) +
@@ -1737,6 +1763,51 @@ class Interferometer(object):
 
             self.antLock = False
 
+    def _zoom_in_antennas(self, event):
+        self._zoom_antennas(.5)
+
+    def _zoom_out_antennas(self, event):
+        self._zoom_antennas(2.)
+
+    def _zoom_antennas(self, zoom_factor):
+        """
+        For now implemented based on _onKeyPress. The relevant code
+        should be better separated from mpl.events from there.
+
+        :param zoom_factor: factor to zoom in or out. 2. => zoom out by
+        doubling the x and y ranges. .5 => zoom in by halving the x and
+        y ranges
+        """
+
+        scal = 1.0
+        # self.antPlot
+        cz = 3
+
+        print ('curs: {0}'.format(self.curzoom[cz]))
+        cz = 3
+        x_len = np.abs(
+            self.curzoom[cz][1] - self.curzoom[cz][0]) / scal
+        y_len = np.abs(
+            self.curzoom[cz][3] - self.curzoom[cz][2]) / scal
+
+        x_len *= zoom_factor
+        y_len *= zoom_factor
+        x_c = (self.curzoom[cz][1] + self.curzoom[cz][0]) / 2.
+        y_c = (self.curzoom[cz][3] + self.curzoom[cz][2]) / 2.
+        x0 = x_c - x_len/2.
+        x1 = x_c + x_len/2.
+        y0 = y_c - x_len/2.
+        y1 = y_c + x_len/2.
+
+        for ax in [self.antPlot]:
+            ax.set_xlim((x0, x1))
+            ax.set_ylim((y0, y1))
+
+        self.curzoom[cz] = (
+            x0 * scal, x1 * scal, y0 * scal, y1 * scal)
+        print ('curs: {0}'.format(self.curzoom[cz]))
+        self._redraw_on_zoom()
+
     def _onKeyPress(self, event):
         from uvplotter2 import ApSynSim_UV_Plotter2
 
@@ -1892,11 +1963,14 @@ class Interferometer(object):
                 self.curzoom[cz] = (
                     xx0 * scal, xx1 * scal, yy0 * scal, yy1 * scal)
 
-                pl.draw()
-                self.canvas.draw()
+                self._redraw_on_zoom()
 
-                if self.my_cleaner:
-                    self.my_cleaner.canvas1.draw()
+    def _redraw_on_zoom(self):
+        pl.draw()
+        self.canvas.draw()
+
+        if self.my_cleaner:
+            self.my_cleaner.canvas1.draw()
 
     def saveArray(self, array):
 

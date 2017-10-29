@@ -260,10 +260,10 @@ class ApSynSim_UV_Plotter1(object):
         Up = event.mouseevent.xdata - self.parent.UVSh
         Vp = event.mouseevent.ydata + self.parent.UVSh
 
-        yi = np.floor((self.parent.UVmax + Up) / (
-            self.parent.UVmax) * self.parent.Npix / 2.)
-        xi = np.floor((self.parent.UVmax - Vp) / (
-            self.parent.UVmax) * self.parent.Npix / 2.)
+        yi = int(np.floor((self.parent.UVmax + Up) / (
+            self.parent.UVmax) * self.parent.Npix / 2.))
+        xi = int(np.floor((self.parent.UVmax - Vp) / (
+            self.parent.UVmax) * self.parent.Npix / 2.))
 
         if xi > 0 and yi > 0 and xi < self.parent.Npix and yi < self.parent.Npix:
             self.PSFText.set_text(
