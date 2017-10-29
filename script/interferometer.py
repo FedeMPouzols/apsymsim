@@ -228,6 +228,8 @@ class Interferometer(object):
             self.canvas.show()
             menubar = Tk.Menu(self.tks)
             menubar.add_command(label="Help", command=self._getHelp)
+            menubar.add_command(label="Advanced reduction",
+                                command=self._reduce_menu_action)
             menubar.add_command(label="Quit", command=self.quit)
 
             self.tks.config(menu=menubar)
@@ -329,7 +331,9 @@ class Interferometer(object):
         self.wax['add'] = pl.axes([but_x + 0.38, but_y + 0.43, 0.04, 0.05], zorder=100)
         self.wax['rem'] = pl.axes([but_x + 0.62, but_y + 0.43, 0.04, 0.05], zorder=100)
 
-        self.wax['reduce'] = pl.axes([but_x + 0.15, but_y + 0.20, 0.10, 0.05], zorder=100)
+        show_adv_reduction_button = False
+        if show_adv_reduction_button:
+            self.wax['reduce'] = pl.axes([but_x + 0.15, but_y + 0.20, 0.10, 0.05], zorder=100)
         self.wax['clean'] = pl.axes([but_x + 0.12, but_y + 0.08, 0.16, 0.05], zorder=100)
         have_quit = False
         if have_quit:
@@ -375,7 +379,8 @@ class Interferometer(object):
         # create widgets for buttons
         self.widget['add'] = Button(self.wax['add'], r'+ A')
         self.widget['rem'] = Button(self.wax['rem'], r'- A')
-        self.widget['reduce'] = Button(self.wax['reduce'], r'Adv. reduction')
+        if show_adv_reduction_button:
+            self.widget['reduce'] = Button(self.wax['reduce'], r'Adv. reduction')
         self.widget['clean'] = Button(self.wax['clean'], r'Clean image')
         clean_label = self.widget['clean'].label
         clean_label.set_fontsize(14)
@@ -420,7 +425,8 @@ class Interferometer(object):
         self.widget['gammacorr'].on_changed(self._gammacorr)
         if have_quit:
             self.widget['quit'].on_clicked(self.quit)
-        self.widget['reduce'].on_clicked(self._reduce)
+        if show_adv_reduction_button:
+            self.widget['reduce'].on_clicked(self._reduce)
         self.widget['clean'].on_clicked(self._clean_img)
 
         # set on_ methods for output bars/labels
@@ -458,10 +464,14 @@ class Interferometer(object):
             self._setPrimaryBeam(replotFFT=True)
             self._changeCoordinates(rescale=True)
 
-    def _reduce(self, event):
+    def _reduce_menu_action(self):
 
         if self.tks is not None:
             self.my_cleaner = cleaner.Cleaner(self)
+
+    def _reduce(self, event):
+
+        self._reduce_menu_action()
 
     def _clean_img(self, event):
         restart_from_0 = True
