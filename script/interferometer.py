@@ -328,8 +328,11 @@ class Interferometer(object):
         self.wax['loadarr'] = pl.axes([but_x + 0.15, but_y + 0.38, 0.10, 0.05], zorder=100)
         self.wax['save'] = pl.axes([but_x + 0.15, but_y + 0.32, 0.10, 0.05], zorder=100)
         self.wax['loadmod'] = pl.axes([but_x + 0.15, but_y + 0.26, 0.10, 0.05], zorder=100)
-        self.wax['add'] = pl.axes([but_x + 0.38, but_y + 0.43, 0.04, 0.05], zorder=100)
-        self.wax['rem'] = pl.axes([but_x + 0.62, but_y + 0.43, 0.04, 0.05], zorder=100)
+        self.wax['add'] = pl.axes([but_x + 0.38, but_y + 0.44, 0.04, 0.05], zorder=100)
+        self.wax['rem'] = pl.axes([but_x + 0.62, but_y + 0.44, 0.04, 0.05], zorder=100)
+
+        self.wax['zoom_in'] = pl.axes([but_x + 0.38, but_y + 0.02, 0.04, 0.05], zorder=100)
+        self.wax['zoom_out'] = pl.axes([but_x + 0.62, but_y + 0.02, 0.04, 0.05], zorder=100)
 
         show_adv_reduction_button = False
         if show_adv_reduction_button:
@@ -379,6 +382,8 @@ class Interferometer(object):
         # create widgets for buttons
         self.widget['add'] = Button(self.wax['add'], r'+ A')
         self.widget['rem'] = Button(self.wax['rem'], r'- A')
+        self.widget['zoom_in'] = Button(self.wax['zoom_in'], r'Z+')
+        self.widget['zoom_out'] = Button(self.wax['zoom_out'], r'Z-')
         if show_adv_reduction_button:
             self.widget['reduce'] = Button(self.wax['reduce'], r'Adv. reduction')
         self.widget['clean'] = Button(self.wax['clean'], r'Clean image')
@@ -419,6 +424,8 @@ class Interferometer(object):
         # set on_ methods for buttons
         self.widget['add'].on_clicked(self._addAntenna)
         self.widget['rem'].on_clicked(self._removeAntenna)
+        self.widget['zoom_in'].on_clicked(self._zoom_in_antennas)
+        self.widget['zoom_out'].on_clicked(self._zoom_out_antennas)
         self.widget['save'].on_clicked(self.saveArray)
         self.widget['loadarr'].on_clicked(self.loadArray)
         self.widget['loadmod'].on_clicked(self.loadModel)
@@ -1281,7 +1288,7 @@ class Interferometer(object):
             self.antPlot.set_xlabel('E-W offset (km)')
             self.antPlot.set_ylabel('N-S offset (km)')
             self.antPlot.set_title('ARRAY CONFIGURATION')
-            self.antText = self.antPlot.text(0.05, 0.88,
+            self.antText = self.antPlot.text(0.05, 0.94,
                                              self.fmtA % (
                                                  self.Nant + self.Nant2),
                                              transform=self.antPlot.transAxes)
@@ -1756,6 +1763,51 @@ class Interferometer(object):
 
             self.antLock = False
 
+    def _zoom_in_antennas(self, event):
+        self._zoom_antennas(.5)
+
+    def _zoom_out_antennas(self, event):
+        self._zoom_antennas(2.)
+
+    def _zoom_antennas(self, zoom_factor):
+        """
+        For now implemented based on _onKeyPress. The relevant code
+        should be better separated from mpl.events from there.
+
+        :param zoom_factor: factor to zoom in or out. 2. => zoom out by
+        doubling the x and y ranges. .5 => zoom in by halving the x and
+        y ranges
+        """
+
+        scal = 1.0
+        # self.antPlot
+        cz = 3
+
+        print ('curs: {0}'.format(self.curzoom[cz]))
+        cz = 3
+        x_len = np.abs(
+            self.curzoom[cz][1] - self.curzoom[cz][0]) / scal
+        y_len = np.abs(
+            self.curzoom[cz][3] - self.curzoom[cz][2]) / scal
+
+        x_len *= zoom_factor
+        y_len *= zoom_factor
+        x_c = (self.curzoom[cz][1] + self.curzoom[cz][0]) / 2.
+        y_c = (self.curzoom[cz][3] + self.curzoom[cz][2]) / 2.
+        x0 = x_c - x_len/2.
+        x1 = x_c + x_len/2.
+        y0 = y_c - x_len/2.
+        y1 = y_c + x_len/2.
+
+        for ax in [self.antPlot]:
+            ax.set_xlim((x0, x1))
+            ax.set_ylim((y0, y1))
+
+        self.curzoom[cz] = (
+            x0 * scal, x1 * scal, y0 * scal, y1 * scal)
+        print ('curs: {0}'.format(self.curzoom[cz]))
+        self._redraw_on_zoom()
+
     def _onKeyPress(self, event):
         from uvplotter2 import ApSynSim_UV_Plotter2
 
@@ -1911,11 +1963,14 @@ class Interferometer(object):
                 self.curzoom[cz] = (
                     xx0 * scal, xx1 * scal, yy0 * scal, yy1 * scal)
 
-                pl.draw()
-                self.canvas.draw()
+                self._redraw_on_zoom()
 
-                if self.my_cleaner:
-                    self.my_cleaner.canvas1.draw()
+    def _redraw_on_zoom(self):
+        pl.draw()
+        self.canvas.draw()
+
+        if self.my_cleaner:
+            self.my_cleaner.canvas1.draw()
 
     def saveArray(self, array):
 
