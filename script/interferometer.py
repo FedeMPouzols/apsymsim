@@ -249,7 +249,7 @@ class Interferometer(object):
             self.UVPlot.set_visible(False)
             self.spherePlot.set_visible(False)
 
-        self.antPlot = self.figUV.add_subplot(232, aspect='equal')
+        self.antPlot = self.figUV.add_subplot(232, aspect='equal', zorder=100)
         # beamPlot (this is dirty-beam) not visible (bottom-right panel).
         # This space is currently used for the clean image
         self.show_beamPlot = False
@@ -260,10 +260,10 @@ class Interferometer(object):
         if not self.show_beamPlot:
             self.beamPlot.set_visible(False)
 
-        self.modelPlot = self.figUV.add_subplot(234, aspect='equal')
-        self.dirtyPlot = self.figUV.add_subplot(235, aspect='equal')
+        self.modelPlot = self.figUV.add_subplot(234, aspect='equal', zorder=100)
+        self.dirtyPlot = self.figUV.add_subplot(235, aspect='equal', zorder=100)
 
-        self.cleanPlot = self.figUV.add_subplot(236, aspect='equal')
+        self.cleanPlot = self.figUV.add_subplot(236, aspect='equal', zorder=100)
         self.cleanPlot.set_adjustable('box-forced')
 
         u = np.linspace(0, 2 * np.pi, 100)
@@ -349,13 +349,13 @@ class Interferometer(object):
         gamma_x = -0.33
         gamma_y = 0
         self.wax['gammacorr'] = pl.axes(
-            [gamma_x + 0.46, gamma_y + 0.08, 0.13, 0.02], axisbg='white')
+            [gamma_x + 0.46, gamma_y + 0.08, 0.13, 0.02], axisbg='white', zorder=110)
         # for the dirty image
         # offsets wrt (original) bottom center panel
         dirty_x = -0.33
         dirty_y = 0
         self.wax['diameter'] = pl.axes(
-            [dirty_x + 0.825, dirty_y + 0.08, 0.10, 0.02], axisbg='white')
+            [dirty_x + 0.825, dirty_y + 0.08, 0.10, 0.02], axisbg='white', zorder=110)
 
         # log(W1/W2) bar when visible for the array
         arr_x = 0.33
@@ -1783,7 +1783,6 @@ class Interferometer(object):
         # self.antPlot
         cz = 3
 
-        print ('curs: {0}'.format(self.curzoom[cz]))
         cz = 3
         x_len = np.abs(
             self.curzoom[cz][1] - self.curzoom[cz][0]) / scal
@@ -1805,7 +1804,6 @@ class Interferometer(object):
 
         self.curzoom[cz] = (
             x0 * scal, x1 * scal, y0 * scal, y1 * scal)
-        print ('curs: {0}'.format(self.curzoom[cz]))
         self._redraw_on_zoom()
 
     def _onKeyPress(self, event):

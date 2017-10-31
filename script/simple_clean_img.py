@@ -35,7 +35,7 @@ class SimpleCleanImg(object):
     results onto one of the subaxes of the 'parent'. Assumes too much about
     the 'parent'. Requires among other things parent.cleanPlot."""
 
-    DEFAULT_NITER = 400
+    DEFAULT_NITER = 300
 
     def __init__(self, parent, plot_axis):
         self.parent = parent
@@ -114,7 +114,7 @@ class SimpleCleanImg(object):
             cmap=self.parent.currcmap)
 
         self.CLEANText = self.parent.cleanPlot.text(
-            0.05, 0.78, self.fmtDC % (0.0, 0.0, 0.0, 0., 0.),
+            0.04, 0.78, self.fmtDC % (0.0, 0.0, 0.0, 0., 0.),
             transform=self.parent.cleanPlot.transAxes,
             bbox=dict(facecolor='white', alpha=0.7),
             fontsize=10, verticalalignment='bottom')
