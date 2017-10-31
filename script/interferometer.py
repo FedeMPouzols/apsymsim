@@ -143,31 +143,8 @@ class Interferometer(object):
         DefaultArray = 'Long_Golay_12.array'
 
         # Overwrite defaults from config file:
-        d1 = os.path.dirname(os.path.realpath(__file__))
-        print(d1)
 
-        # execfile(os.path.join(os.path.basename(d1),'apsynsim.config'))
-        try:
-            conf = open(os.path.join(d1, 'apsynsim.config'))
-        except:
-            d1 = os.getcwd()
-            conf = open(os.path.join(d1, 'apsynsim.config'))
-
-        for line in conf.readlines():
-            temp = line.replace(' ', '')
-            if len(temp) > 2:
-                if temp[0:4] == 'Npix':
-                    Npix = int(temp[5:temp.find('#')])
-                if temp[0:2] == 'nH':
-                    nH = int(temp[3:temp.find('#')])
-                if temp[0:10] == 'DefaultMod':
-                    DefaultModel = temp[12:temp.find('#')].replace(
-                        '\'', '').replace('\"', '')
-                if temp[0:12] == 'DefaultArray':
-                    DefaultArray = temp[14:temp.find('#')].replace(
-                        '\'', '').replace('\"', '')
-
-        conf.close()
+        d1, Npix, nH, DefaultModel, DefaultArray = self.get_config()
 
 # Set instance configuration values:
         self.nH = nH
@@ -197,6 +174,52 @@ class Interferometer(object):
         self.readModels(str(model_file))
         self.readAntennas(str(antenna_file))
         self.init_GUI()  # makefigs=makefigs)
+
+    def get_config(self):
+        # execfile(os.path.join(os.path.basename(d1),'apsynsim.config'))
+        dirname = os.path.dirname(os.path.realpath(__file__))
+        this_dirname = dirname
+        print('Looking for config files in this directory: {0}'.format(dirname))
+
+        try:
+            conf = open(os.path.join(dirname, 'apsynsim.config'))
+        except IOError as exc:
+            try:
+                dirname = os.getcwd()
+                conf = open(os.path.join(dirname, 'apsynsim.config'))
+            except IOError as exc:
+                dirname = this_dirname
+                print('Did not find any config file. Using defaults.')
+
+        if 'conf' in locals():
+            print('Reading config file: {0}'.format(conf.name))
+            Npix, nH, DefaultModel, DefaultArray = self.read_config_file(conf)
+            conf.close()
+        else:
+            # hard wired defaults
+            Npix = 512
+            nH = 100
+            DefaultModel = 'RadioGalaxy.model'
+            DefaultArray = 'VLA-B.array'
+
+        return dirname, Npix, nH, DefaultModel, DefaultArray
+
+    def read_config_file(self, conf):
+        for line in conf.readlines():
+            temp = line.replace(' ', '')
+            if len(temp) > 2:
+                if temp[0:4] == 'Npix':
+                    Npix = int(temp[5:temp.find('#')])
+                if temp[0:2] == 'nH':
+                    nH = int(temp[3:temp.find('#')])
+                if temp[0:10] == 'DefaultMod':
+                    DefaultModel = temp[12:temp.find('#')].replace(
+                        '\'', '').replace('\"', '')
+                if temp[0:12] == 'DefaultArray':
+                    DefaultArray = temp[14:temp.find('#')].replace(
+                        '\'', '').replace('\"', '')
+
+        return Npix, nH, DefaultModel, DefaultArray
 
     def showError(self, message):
         showinfo('ERROR!', message)
